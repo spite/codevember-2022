@@ -1,0 +1,191 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500&family=Open+Sans:wght@300;600&display=swap");
+
+body {
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Open Sans", sans-serif;
+}
+
+html {
+  font-size: 14px;
+}
+
+#index {
+  color: #202020;
+  font-size: 1rem;
+}
+
+#index ul {
+  list-style-type: none;
+}
+
+#index h1 {
+  padding: 1em;
+}
+
+#index ul {
+  margin-bottom: 1em;
+}
+
+a {
+  font-weight: bold;
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:hover {
+  font-weight: bold;
+}
+
+canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#ui {
+  display: flex;
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  flex-direction: column;
+  padding: 1.5em;
+  gap: 1.5em;
+  z-index: 10;
+}
+
+#info {
+  color: white;
+  text-shadow: 1px 1px black;
+  border-radius: 1em;
+  margin-right: 0.5em;
+}
+
+#info a {
+  color: inherit;
+}
+
+#info p:last-child {
+  margin-bottom: 0;
+}
+
+.contrast #info *,
+.contrast footer * {
+  text-shadow: none;
+  color: black;
+}
+
+.contrast #info button {
+  border-color: black;
+}
+
+.contrast #info button:hover {
+  background-color: rgb(80, 80, 80);
+  color: white;
+}
+
+.ultrahigh #info {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+#info h1 {
+  font-family: "Montserrat", sans-serif;
+  margin-bottom: 0.5em;
+  font-size: 1.5rem;
+}
+
+#info h2 {
+  font-family: "Montserrat", sans-serif;
+  font-size: 1rem;
+}
+
+#info p {
+  margin-bottom: 1em;
+}
+
+#info button {
+  color: inherit;
+  cursor: pointer;
+}
+
+button {
+  border: 1px solid white;
+  outline: none;
+  background: none;
+  border-radius: 3px;
+  padding: 0.5em 1em;
+  margin-right: 0.5em;
+  pointer-events: auto;
+  text-shadow: 1px 1px black;
+  font-weight: bold;
+}
+
+button:hover,
+#info button:hover {
+  background-color: rgb(180, 180, 180);
+  color: black;
+  text-shadow: none;
+}
+
+#info a {
+  pointer-events: auto;
+}
+
+footer {
+  color: white;
+  text-shadow: 1px 1px black;
+  display: flex;
+  flex: 1;
+  align-items: end;
+}
+
+footer a {
+  pointer-events: auto;
+}
+
+.contact {
+  padding: 1em;
+  font-size: 2em;
+}
+
+.github-corner:hover .octo-arm {
+  animation: octocat-wave 560ms ease-in-out;
+}
+@keyframes octocat-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  60% {
+    transform: rotate(-25deg);
+  }
+  40%,
+  80% {
+    transform: rotate(10deg);
+  }
+}
+@media (max-width: 500px) {
+  .github-corner:hover .octo-arm {
+    animation: none;
+  }
+  .github-corner .octo-arm {
+    animation: octocat-wave 560ms ease-in-out;
+  }
+}
