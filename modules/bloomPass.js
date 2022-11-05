@@ -2,6 +2,7 @@ import {
   RawShaderMaterial,
   Vector2,
   GLSL3,
+  sRGBEncoding,
   RGBAFormat,
 } from "../third_party/three.module.js";
 import { ShaderPingPongPass } from "./ShaderPingPongPass.js";
@@ -29,6 +30,7 @@ class BloomPass {
     for (let i = 0; i < this.levels; i++) {
       const blurPass = new ShaderPingPongPass(blurShader, {
         format: RGBAFormat,
+        encoding: sRGBEncoding,
       });
       this.blurPasses.push(blurPass);
     }
