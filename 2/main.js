@@ -124,7 +124,7 @@ function randomizeShape() {
       }
       break;
     case 2:
-      scottGray.setSize(512, 512);
+      scottGray.setSize(1024, 1024);
       scottGray.spherical(true);
       for (const layer of layers) {
         layer.setSphere();

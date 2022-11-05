@@ -162,17 +162,14 @@ class Layer extends Mesh {
 
   setTorus() {
     this.geometry = geo1;
-    console.log("torus");
   }
 
   setTorusKnot() {
     this.geometry = geo2;
-    console.log("torus knot");
   }
 
   setSphere() {
     this.geometry = geo3;
-    console.log("sphere");
   }
 }
 
