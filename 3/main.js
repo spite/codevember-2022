@@ -68,8 +68,6 @@ const camHelper = new CameraHelper(dirLight.shadow.camera);
 // scene.add(camHelper);
 
 const controls = getControls();
-// controls.enableZoom = false;
-// controls.enablePan = false;
 
 let frames = 0;
 
@@ -96,7 +94,7 @@ function initMeshes(envMap) {
   });
 
   const mesh = new Mesh(
-    new TorusKnotBufferGeometry(0.5, 0.075, 200, 30), //, 3, 2),
+    new TorusKnotBufferGeometry(0.5, 0.075, 200, 30),
     material
   );
   mesh.matrixAutoUpdate = false;
@@ -131,6 +129,8 @@ async function init() {
 let prevTime = performance.now();
 let time = 0;
 const mat = new Matrix4();
+
+// https://ami.uni-eszterhazy.hu/uploads/papers/finalpdf/AMI_40_from175to186.pdf
 
 function makeReflectionMatrix(n, mat) {
   mat.set(
