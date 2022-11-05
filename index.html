@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Codevember 2022</title>
+
+    <!-- Twitter Card data -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@thespite" />
+    <meta name="twitter:title" content="Codevember 2022" />
+    <meta
+      name="twitter:description"
+      content="All the demos for Codevember 2022"
+    />
+    <meta name="twitter:creator" content="@thespite" />
+    <meta
+      name="twitter:image:src"
+      content="https://spite.github.io/codevember-2022/screenshots/codevember-2022-7.jpg"
+    />
+
+    <!-- Open Graph data -->
+    <meta property="og:type" content="demo" />
+    <meta
+      property="og:image"
+      content="https://spite.github.io/codevember-2022/screenshots/codevember-2022-7.jpg"
+    />
+    <meta
+      property="og:description"
+      content="All the demos for Codevember 2022"
+    />
+    <meta property="og:site_name" content="Clicktorelease" />
+
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+    <link href="./styles/styles.css" rel="stylesheet" />
+    <style>
+      body {
+        overflow: auto;
+      }
+      div.cards {
+        display: grid;
+        grid-template-columns: repeat(
+          auto-fill,
+          minmax(min(100vw, 512px), 1fr)
+        );
+      }
+      div.cards div::before {
+        content: "";
+        display: block;
+        padding-bottom: 100%;
+      }
+      div.cards div {
+        background-size: cover;
+        background-position: 50% 50%;
+        position: relative;
+        filter: grayscale(0.2);
+        transition: filter ease-in-out 200ms;
+      }
+      div.cards div:hover {
+        filter: grayscale(0);
+      }
+      div.cards div a {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        text-decoration: none;
+        font-size: 1em;
+        right: 0;
+        top: 0;
+        display: flex;
+        opacity: 0;
+        transition: opacity ease-in-out 200ms;
+        align-items: end;
+        justify-content: center;
+        padding: 2em;
+      }
+      div.cards div:focus a,
+      div.cards div:active a,
+      div.cards div:hover a {
+        opacity: 1;
+      }
+      div.cards .contrast {
+        color: white;
+        text-shadow: 1px 1px black;
+      }
+      .day1 {
+        background-image: url(screenshots/codevember-2022-1.jpg);
+      }
+      .day2 {
+        background-image: url(screenshots/codevember-2022-2.jpg);
+      }
+      .day3 {
+        background-image: url(screenshots/codevember-2022-3.jpg);
+      }
+      .day4 {
+        background-image: url(screenshots/codevember-2022-4.jpg);
+      }
+      .day5 {
+        background-image: url(screenshots/codevember-2022-5.jpg);
+      }
+      .day6 {
+        background-image: url(screenshots/codevember-2022-6.jpg);
+      }
+      .day7 {
+        background-image: url(screenshots/codevember-2022-7.jpg);
+      }
+      .day8 {
+        background-image: url(screenshots/codevember-2022-8.jpg);
+      }
+      .day9 {
+        background-image: url(screenshots/codevember-2022-9.jpg);
+      }
+      .day10 {
+        background-image: url(screenshots/codevember-2022-10.jpg);
+      }
+      .day11 {
+        background-image: url(screenshots/codevember-2022-11.jpg);
+      }
+      .day12 {
+        background-image: url(screenshots/codevember-2022-12.jpg);
+      }
+      .day13 {
+        background-image: url(screenshots/codevember-2022-13.jpg);
+      }
+      .day14 {
+        background-image: url(screenshots/codevember-2022-14.jpg);
+      }
+      .day15 {
+        background-image: url(screenshots/codevember-2022-15.jpg);
+      }
+      .day16 {
+        background-image: url(screenshots/codevember-2022-16.jpg);
+      }
+      .day17 {
+        background-image: url(screenshots/codevember-2022-17.jpg);
+      }
+      .day18 {
+        background-image: url(screenshots/codevember-2022-18.jpg);
+      }
+      .day19 {
+        background-image: url(screenshots/codevember-2022-19.jpg);
+      }
+      .day20 {
+        background-image: url(screenshots/codevember-2022-20.jpg);
+      }
+      .day21 {
+        background-image: url(screenshots/codevember-2022-21.jpg);
+      }
+      .day22 {
+        background-image: url(screenshots/codevember-2022-22.jpg);
+      }
+      .day23 {
+        background-image: url(screenshots/codevember-2022-23.jpg);
+      }
+      .day24 {
+        background-image: url(screenshots/codevember-2022-24.jpg);
+      }
+      .day25 {
+        background-image: url(screenshots/codevember-2022-25.jpg);
+      }
+      .day26 {
+        background-image: url(screenshots/codevember-2022-26.jpg);
+      }
+      .day27 {
+        background-image: url(screenshots/codevember-2022-27.jpg);
+      }
+      .day28 {
+        background-image: url(screenshots/codevember-2022-28.jpg);
+      }
+      .day29 {
+        background-image: url(screenshots/codevember-2022-29.jpg);
+      }
+      .day30 {
+        background-image: url(screenshots/codevember-2022-30.jpg);
+      }
+      #index {
+        position: relative;
+      }
+      #index h1 {
+        margin-right: 4em;
+      }
+      #index tweet-button {
+        position: absolute;
+        right: 1.5em;
+        top: 1.5em;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="index">
+      <h1>Codevember 2022 <tweet-button></tweet-button></h1>
+      <div class="cards">
+        <!-- <div class="day1 contrast">
+          <a href="./1"><h2>1. light</h2></a>
+        </div>
+        <div class="day2 contrast">
+          <a href="./2"><h2>2. coral</h2></a>
+        </div> -->
+        <div class="day3 contrast">
+          <a href="./3"><h2>3. reflect</h2></a>
+        </div>
+        <!-- <div class="day4 contrast">
+          <a href="./4"><h2>4. fragment</h2></a>
+        </div>
+        <div class="day5 contrast">
+          <a href="./5"><h2>5. eclipse</h2></a>
+        </div>
+        <div class="day6 contrast">
+          <a href="./6"><h2>6. dune</h2></a>
+        </div>
+        <div class="day7 contrast">
+          <a href="./7"><h2>7. pigment</h2></a>
+        </div>
+        <div class="day8 contrast">
+          <a href="./8"><h2>8. shadow</h2></a>
+        </div>
+        <div class="day9 contrast">
+          <a href="./9"><h2>9. erosion</h2></a>
+        </div>
+        <div class="day10 contrast">
+          <a href="./10"><h2>10. penumbra</h2></a>
+        </div>
+        <div class="day11 contrast">
+          <a href="./11"><h2>11. spring</h2></a>
+        </div>
+        <div class="day12 contrast">
+          <a href="./12"><h2>12. whisp</h2></a>
+        </div>
+        <div class="day13 contrast">
+          <a href="./13"><h2>13. bloom</h2></a>
+        </div>
+        <div class="day14 contrast">
+          <a href="./14"><h2>14. lattice</h2></a>
+        </div>
+        <div class="day14 contrast">
+          <a href="./15"><h2>14. rain</h2></a>
+        </div>
+        <div class="day16 contrast">
+          <a href="./16"><h2>16. mist</h2></a>
+        </div>
+        <div class="day17 contrast">
+          <a href="./17"><h2>17. wind</h2></a>
+        </div>
+        <div class="day18 contrast">
+          <a href="./18"><h2>18. reaction</h2></a>
+        </div>
+        <div class="day19 contrast">
+          <a href="./19"><h2>19. river</h2></a>
+        </div>
+        <div class="day19 contrast">
+          <a href="./20"><h2>20. ray</h2></a>
+        </div>
+        <div class="day21 contrast">
+          <a href="./21"><h2>21. boreal</h2></a>
+        </div>
+        <div class="day22 contrast">
+          <a href="./22"><h2>22. crimson</h2></a>
+        </div>
+        <div class="day23 contrast">
+          <a href="./23"><h2>23. iridescent</h2></a>
+        </div>
+        <div class="day24">
+          <a href="./24"><h2>24. murmuration</h2></a>
+        </div>
+        <div class="day25">
+          <a href="./25"><h2>25. mineral</h2></a>
+        </div>
+        <div class="day26 contrast">
+          <a href="./26"><h2>26. canopy</h2></a>
+        </div>
+        <div class="day27 contrast">
+          <a href="./27"><h2>27. strata</h2></a>
+        </div>
+        <div class="day28 contrast">
+          <a href="./28"><h2>28. surface</h2></a>
+        </div>
+        <div class="day29 contrast">
+          <a href="./29"><h2>29. diffuse</h2></a>
+        </div>
+        <div class="day29 contrast">
+          <a href="./30"><h2>30. grain</h2></a>
+        </div> -->
+      </div>
+    </div>
+    <div class="contact">
+      <p><a href="https://github.com/spite/codevember-2022">GitHub repo</a></p>
+      <p>Follow me on <a href="https://twitter.com/thespite">twitter</a></p>
+    </div>
+  </body>
+  <script src="modules/tweet-button.js" type="module"></script>
+</html>
