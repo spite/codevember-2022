@@ -274,19 +274,12 @@ function goFullscreen() {
 let running = true;
 
 window.addEventListener("keydown", (e) => {
-  if (e.code === "KeyR") {
-    randomize();
-  }
   if (e.code === "Space") {
     running = !running;
   }
   if (e.code === "KeyF") {
     goFullscreen();
   }
-});
-
-document.querySelector("#randomizeBtn").addEventListener("click", (e) => {
-  randomize();
 });
 
 document.querySelector("#pauseBtn").addEventListener("click", (e) => {
