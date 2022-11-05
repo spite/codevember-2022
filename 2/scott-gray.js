@@ -43,6 +43,7 @@ uniform float da;
 uniform float db;
 uniform float radius;
 uniform bool contact;
+uniform bool spherical;
 
 out vec4 color;
 
@@ -74,8 +75,10 @@ vec2 lookupRect(vec2 uv) {
 }
 
 vec2 lookup(vec2 uv) {
-  // return lookupRect(uv);
-  return lookupPolar(uv);
+  if(spherical) {
+    return lookupPolar(uv);
+  }
+  return lookupRect(uv);
 }
 
 void main() {
@@ -83,6 +86,7 @@ void main() {
     vec2 step = 1./resolution;
 
     vec2 uv = texture(map, lookup(vUv)).xy;
+    
     vec2 uv0 = texture(map, lookup(vUv+vec2(-step.x, 0.0))).xy;
     vec2 uv1 = texture(map, lookup(vUv+vec2(step.x, 0.0))).xy;
     vec2 uv2 = texture(map, lookup(vUv+vec2(0.0, -step.y))).xy;
@@ -124,6 +128,7 @@ class ScottGray2D {
         resolution: { value: new Vector2(width, height) },
         pointer: { value: this.pointer },
         contact: { value: false },
+        spherical: { value: false },
       },
       vertexShader,
       fragmentShader,
@@ -148,6 +153,15 @@ class ScottGray2D {
 
   get texture() {
     return this.simulation.fbos[this.simulation.currentFBO].texture;
+  }
+
+  setSize(w, h) {
+    this.simulation.setSize(w, h);
+    this.simulation.shader.uniforms.resolution.value.set(w, h);
+  }
+
+  spherical(v) {
+    this.simulation.shader.uniforms.spherical.value = v;
   }
 
   step() {

@@ -8,20 +8,26 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@thespite" />
     <meta name="twitter:title" content="Codevember 2022 - 02 - Coral" />
-    <meta name="twitter:description" content="Volumetric light" />
+    <meta
+      name="twitter:description"
+      content="Coral with Gray-Scott reaction-diffusion"
+    />
     <meta name="twitter:creator" content="@thespite" />
     <meta
       name="twitter:image:src"
-      content="https://spite.github.io/codevember-2022/screenshots/codevember-2022-1.jpg"
+      content="https://spite.github.io/codevember-2022/screenshots/codevember-2022-2.jpg"
     />
 
     <!-- Open Graph data -->
     <meta property="og:type" content="demo" />
     <meta
       property="og:image"
-      content="https://spite.github.io/codevember-2022/screenshots/codevember-2022-1.jpg"
+      content="https://spite.github.io/codevember-2022/screenshots/codevember-2022-2.jpg"
     />
-    <meta property="og:description" content="Volumetric light" />
+    <meta
+      property="og:description"
+      content="Coral with Gray-Scott reaction-diffusion"
+    />
     <meta property="og:site_name" content="Clicktorelease" />
 
     <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
@@ -36,12 +42,17 @@
           Move the mouse around/tap to seed the reaction-diffusion.<br />
           Click and drag to move the camera.<br />
           Press space to stop the animation.<br />
-          Press R to randomize. Press F to go fullscren.
+          Press R/C/S to randomize. Press F to go fullscren.
         </p>
         <p>
           <button id="pauseBtn">Pause</button>
-          <button id="randomizeBtn">Randomize</button>
           <button id="fullscreenBtn">Fullscreen</button>
+        </p>
+        <p>Randomize:</p>
+        <p>
+          <button id="randomizeReactionBtn">Reaction</button>
+          <button id="randomizeShapeBtn">Shape</button>
+          <button id="randomizeColorsBtn">Colors</button>
         </p>
         <p>
           Made with

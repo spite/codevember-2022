@@ -8,7 +8,6 @@ import {
 } from "../modules/renderer.js";
 import {
   DataTexture,
-  RGBFormat,
   Raycaster,
   Mesh,
   Vector2,
@@ -19,19 +18,20 @@ import {
 } from "../third_party/three.module.js";
 import { ScottGray2D } from "./scott-gray.js";
 import { Layer } from "./Layer.js";
-import { warm } from "../modules/palettes.js";
+import { natural, natural2 } from "../modules/palettes.js";
 import { GradientLinear } from "../modules/gradient-linear.js";
 import { Post } from "./post.js";
+import { randomInRange } from "../modules/Maf.js";
 // import { capture } from "../modules/capture.js";
 
 const controls = getControls(camera);
 
 const post = new Post(renderer);
 
-function generateGradient() {
-  const palette = warm;
+function generateGradient(palette) {
   const gradient = new GradientLinear(palette);
   const selection = [
+    gradient.getAt(Math.random()),
     gradient.getAt(Math.random()),
     gradient.getAt(Math.random()),
   ];
@@ -59,10 +59,10 @@ function generateGradient() {
   return colorTexture;
 }
 
-renderer.setClearColor(0x101010, 1);
+renderer.setClearColor(0x287ae0, 1);
 
-const width = 512;
-const height = 512;
+const width = 256 * 4;
+const height = 256;
 const scottGray = new ScottGray2D(renderer, width, height);
 
 const raycaster = new Raycaster();
@@ -79,29 +79,85 @@ const layers = [];
 const layerStep = 0.0025;
 
 function randomizeColors() {
-  const colorTexture = generateGradient();
+  const colorTexture = generateGradient(natural);
+  const colorTexture2 = generateGradient(natural2);
+  const seed = randomInRange(-1000, 1000);
+  const offset = randomInRange(1, 2);
   for (const layer of layers) {
     layer.gradient = colorTexture;
+    layer.gradient2 = colorTexture2;
+    layer.material.uniforms.seed.value = seed;
+    layer.material.uniforms.scale.value = offset;
   }
 }
 
 for (let i = 0; i < LAYERS; i++) {
   const layer = new Layer(renderer);
   const z = 1 + i * layerStep;
-  layer.scale.setScalar(z);
+  // layer.scale.setScalar(z);
   scene.add(layer);
   layers.push(layer);
 }
 randomizeColors();
 
+let curShape = 0;
+function randomizeShape() {
+  let r;
+  do {
+    r = Math.floor(Math.random() * 3);
+  } while (r === curShape);
+  curShape = r;
+
+  switch (r) {
+    case 0:
+      scottGray.setSize(256 * 4, 256);
+      scottGray.spherical(false);
+      for (const layer of layers) {
+        layer.setTorus();
+      }
+      break;
+    case 1:
+      scottGray.setSize(256 * 10, 256);
+      scottGray.spherical(false);
+      for (const layer of layers) {
+        layer.setTorusKnot();
+      }
+      break;
+    case 2:
+      scottGray.setSize(512, 512);
+      scottGray.spherical(true);
+      for (const layer of layers) {
+        layer.setSphere();
+      }
+      break;
+  }
+}
+
+function goFullscreen() {
+  if (renderer.domElement.webkitRequestFullscreen) {
+    renderer.domElement.webkitRequestFullscreen();
+  } else {
+    renderer.domElement.requestFullscreen();
+  }
+}
+
 let running = true;
+
 window.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     running = !running;
   }
-  if (e.code === "KeyR") {
+  if (e.code === "KeyS") {
+    randomizeShape();
+  }
+  if (e.code === "KeyC") {
     randomizeColors();
+  }
+  if (e.code === "KeyR") {
     scottGray.randomize();
+  }
+  if (e.code === "KeyF") {
+    goFullscreen();
   }
 });
 
@@ -109,9 +165,22 @@ document.querySelector("#pauseBtn").addEventListener("click", (e) => {
   running = !running;
 });
 
-document.querySelector("#randomizeBtn").addEventListener("click", (e) => {
+document
+  .querySelector("#randomizeReactionBtn")
+  .addEventListener("click", (e) => {
+    scottGray.randomize();
+  });
+
+document.querySelector("#randomizeColorsBtn").addEventListener("click", (e) => {
   randomizeColors();
-  scottGray.randomize();
+});
+
+document.querySelector("#randomizeShapeBtn").addEventListener("click", (e) => {
+  randomizeShape();
+});
+
+document.querySelector("#fullscreenBtn").addEventListener("click", (e) => {
+  goFullscreen();
 });
 
 const point = new Vector2();
@@ -142,7 +211,8 @@ function render() {
     } else {
       scottGray.simulation.shader.uniforms.contact.value = false;
     }
-    curPoint.lerp(point, 0.1);
+    // curPoint.lerp(point, 0.1);
+    curPoint.copy(point);
 
     scottGray.simulation.shader.uniforms.pointer.value.copy(curPoint);
 

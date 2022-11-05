@@ -21,6 +21,7 @@ import { ShaderPass } from "../modules/ShaderPass.js";
 import { shader as vignette } from "../shaders/vignette.js";
 import { shader as noise } from "../shaders/noise.js";
 import { shader as screen } from "../shaders/screen.js";
+import { shader as levels } from "../shaders/levels.js";
 // import { shader as fxaa } from "../shaders/fxaa.js";
 // import { shader as softLight } from "../shaders/soft-light.js";
 // import { shader as colorDodge } from "../shaders/color-dodge.js";
@@ -54,6 +55,8 @@ ${noise}
 
 ${screen}
 
+${levels}
+
 void main() {
   vec4 b0 = texture(blur0Texture, vUv);
   vec4 b1 = texture(blur1Texture, vUv);
@@ -73,7 +76,8 @@ void main() {
   fragColor *= vignette(vUv, vignetteBoost, vignetteReduction);
   fragColor += .01 * noise(gl_FragCoord.xy, time);
   fragColor.a = 1.;
-  // fragColor = texture(inputTexture, vUv);
+
+  fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.), vec3(.8));
 }
 `;
 
@@ -135,7 +139,7 @@ class Post {
       uniforms: {
         resolution: { value: new Vector2(1, 1) },
         vignetteBoost: { value: params.vignetteBoost || 1.2 },
-        vignetteReduction: { value: params.vignetteReduction || 0.8 },
+        vignetteReduction: { value: params.vignetteReduction || 1.2 },
         inputTexture: { value: this.colorPass.texture },
         blur0Texture: { value: null },
         blur1Texture: { value: null },
