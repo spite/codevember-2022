@@ -7,38 +7,40 @@ import {
   resize,
 } from "../modules/renderer.js";
 import {
-  InstancedMesh,
-  Matrix4,
-  Group,
-  Object3D,
+  CameraHelper,
   Vector3,
+  DoubleSide,
   PCFSoftShadowMap,
   DirectionalLight,
+  MeshStandardMaterial,
   sRGBEncoding,
   HemisphereLight,
   ACESFilmicToneMapping,
-  DynamicDrawUsage,
-  Vector2,
   Mesh,
-  BoxGeometry,
   MeshBasicMaterial,
-  Sphere,
+  IcosahedronGeometry,
+  Group,
 } from "../third_party/three.module.js";
-import { fragments } from "./sphere.js";
+import { generate } from "./sphere.js";
 import { Easings } from "../modules/easings.js";
+import { getFBO } from "../modules/fbo.js";
 
-import { SSAO } from "./SSAO.js";
 import { Post } from "./post.js";
-import { randomInRange, mod, parabola } from "../modules/Maf.js";
-// import { DeviceOrientationControls } from "../third_party/DeviceOrientationControls.js";
+import { randomInRange, mod, clamp, parabola } from "../modules/Maf.js";
 // import { capture } from "../modules/capture.js";
+
+const material = new MeshStandardMaterial({
+  wireframe: !true,
+  side: DoubleSide,
+});
+material.flatShading = true;
+
+const post = new Post(renderer);
 
 renderer.shadowMap.enabled = true;
 renderer.outputEncoding = sRGBEncoding;
 renderer.shadowMap.type = PCFSoftShadowMap;
 renderer.toneMapping = ACESFilmicToneMapping;
-
-// mesh.castShadow = mesh.receiveShadow = true;
 
 const hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0.2);
 hemiLight.color.setHSL(0.6, 1, 0.6);
@@ -54,6 +56,7 @@ scene.add(dirLight);
 
 dirLight.castShadow = true;
 
+dirLight.shadow.bias = -0.0001;
 dirLight.shadow.mapSize.width = 2048;
 dirLight.shadow.mapSize.height = 2048;
 
@@ -62,33 +65,66 @@ dirLight.shadow.camera.left = -r;
 dirLight.shadow.camera.right = r;
 dirLight.shadow.camera.top = r;
 dirLight.shadow.camera.bottom = -r;
-dirLight.shadow.camera.near = 0.1;
-dirLight.shadow.camera.far = 100;
+dirLight.shadow.camera.near = 62.5;
+dirLight.shadow.camera.far = 72.5;
 
-for (const fragment of fragments) {
-  scene.add(fragment);
-  fragment.castShadow = fragment.receiveShadow = true;
+const camHelper = new CameraHelper(dirLight.shadow.camera);
+// scene.add(camHelper);
 
-  fragment.origin = fragment.position.clone();
-  fragment.dist = randomInRange(0.1, 1.5);
-  fragment.rot = {
-    x: (randomInRange(-Math.PI, Math.PI) / 2) * fragment.dist,
-    y: (randomInRange(-Math.PI, Math.PI) / 2) * fragment.dist,
-    z: (randomInRange(-Math.PI, Math.PI) / 2) * fragment.dist,
-  };
+const glowSphere = new Mesh(
+  new IcosahedronGeometry(0.7, 5),
+  new MeshBasicMaterial({ color: 0xffffff })
+);
+scene.add(glowSphere);
+
+function randomizeTransforms() {
+  for (const fragment of fragments) {
+    fragment.dist = randomInRange(0.1, 3.5);
+    fragment.rot = {
+      x: (randomInRange(-Math.PI, Math.PI) / 2) * fragment.dist,
+      y: (randomInRange(-Math.PI, Math.PI) / 2) * fragment.dist,
+      z: (randomInRange(-Math.PI, Math.PI) / 2) * fragment.dist,
+    };
+  }
 }
+
+const group = new Group();
+scene.add(group);
 
 camera.position.set(10, 10, 10);
 camera.lookAt(scene.position);
 
-// mesh.scale.set(0.1, 0.1, 0.1);
 const controls = getControls();
-// // controls.enableZoom = false;
-// // controls.enablePan = false;
+controls.minDistance = 3;
+controls.maxDistance = 100;
+controls.enablePan = false;
 
-// scene.add(mesh);
+const colorFBO = getFBO(1, 1, { samples: 4 });
+const zoomFBO = getFBO(1, 1, { samples: 4 });
+let fragments = [];
 
-async function init() {
+function add() {
+  const vertices = 400; //Math.round(randomInRange(100, 1000));
+  const verticesPerChunk = Math.round(
+    randomInRange(0.25 * vertices, 0.5 * vertices)
+  );
+  fragments = generate(vertices, verticesPerChunk);
+  for (const fragment of fragments) {
+    group.add(fragment);
+    fragment.castShadow = fragment.receiveShadow = true;
+    fragment.origin = fragment.position.clone();
+  }
+}
+
+function remove() {
+  for (const fragment of fragments) {
+    group.remove(fragment);
+  }
+}
+
+function init() {
+  add();
+  randomizeTransforms();
   render();
 }
 
@@ -96,7 +132,12 @@ let frames = 0;
 
 let time = 0;
 let prevTime = performance.now();
-const center = new Vector3();
+
+const particle = new Mesh(
+  new IcosahedronGeometry(0.1, 4),
+  new MeshBasicMaterial({ color: 0xffffff })
+);
+scene.add(particle);
 
 function render() {
   const t = performance.now();
@@ -106,7 +147,10 @@ function render() {
   if (running) {
     time += dt;
 
-    const a = parabola(mod(time / 2000, 1), 1); //0.5 + 0.5 * Math.cos(time / 1000);
+    group.rotation.x = time / 5000;
+    group.rotation.y = time / 3000;
+
+    const a = parabola(mod(time / 2000, 1), 1);
     const b = Easings.InOutQuint(a);
     const dir = new Vector3();
 
@@ -123,9 +167,28 @@ function render() {
       );
     }
   }
+
+  // renderer.render(scene, camera);
+
+  particle.visible = false;
+  renderer.setClearColor(0, 1);
+  for (const fragment of fragments) {
+    fragment.material = new MeshBasicMaterial({ color: 0 });
+  }
+  renderer.setRenderTarget(zoomFBO);
   renderer.render(scene, camera);
-  // ssao.render(renderer, scene, camera);
-  // post.render(ssao.output);
+  renderer.setRenderTarget(null);
+
+  particle.visible = true;
+  renderer.setClearColor(0x202224, 1);
+  for (const fragment of fragments) {
+    fragment.material = material;
+  }
+  renderer.setRenderTarget(colorFBO);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+
+  post.render(colorFBO.texture, zoomFBO.texture);
 
   // capture(renderer.domElement);
 
@@ -138,7 +201,9 @@ function render() {
   renderer.setAnimationLoop(render);
 }
 
-function randomize() {}
+function randomize() {
+  randomizeTransforms();
+}
 
 function goFullscreen() {
   if (renderer.domElement.webkitRequestFullscreen) {
@@ -152,6 +217,8 @@ let running = true;
 
 window.addEventListener("keydown", (e) => {
   if (e.code === "KeyR") {
+    remove();
+    add();
     randomize();
   }
   if (e.code === "Space") {
@@ -159,6 +226,11 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.code === "KeyF") {
     goFullscreen();
+  }
+  if (e.code === "KeyT") {
+    for (const fragment of fragments) {
+      fragment.visible = !fragment.visible;
+    }
   }
 });
 
@@ -174,11 +246,10 @@ document.querySelector("#fullscreenBtn").addEventListener("click", (e) => {
   goFullscreen();
 });
 
-renderer.setClearColor(0x101010, 1);
-
 function myResize(w, h, dPR) {
-  // ssao.setSize(w, h, dPR);
-  // post.setSize(w, h, dPR);
+  colorFBO.setSize(w * dPR, h * dPR);
+  zoomFBO.setSize(w * dPR, h * dPR);
+  post.setSize(w, h, dPR);
 }
 addResize(myResize);
 

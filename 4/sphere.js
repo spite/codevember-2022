@@ -1,14 +1,11 @@
 import {
   Mesh,
   BufferGeometry,
-  MeshNormalMaterial,
   Vector3,
-  Group,
-  Box3Helper,
   BufferAttribute,
   DoubleSide,
-  PlaneBufferGeometry,
   MeshStandardMaterial,
+  MeshNormalMaterial,
 } from "../third_party/three.module.js";
 import Delaunator from "../third_party/delaunator.js";
 import { randomInRange } from "../modules/Maf.js";
@@ -23,14 +20,11 @@ function project(vector) {
   };
 }
 
-const VERTICES = 1000;
-const CHUNK = 200;
-
-function generate() {
+function generateSphere(numVertices) {
   const points = [];
   const vertices = [];
   const p = new Vector3();
-  for (let i = 0; i < VERTICES; i++) {
+  for (let i = 0; i < numVertices; i++) {
     p.set(
       randomInRange(-1, 1),
       randomInRange(-1, 1),
@@ -48,7 +42,7 @@ function generate() {
   p.set(0, 0, 1);
   vertices.push(p.clone());
 
-  const nId = VERTICES;
+  const nId = numVertices;
 
   const oldBuffer = d.triangles;
   const l = d.hull.length;
@@ -69,8 +63,6 @@ function generate() {
   geometry.computeVertexNormals();
   return geometry; //.toNonIndexed();
 }
-
-const geometry = generate();
 
 function removeFace(faces, face) {
   for (let i = 0; i < faces.length; i++) {
@@ -110,7 +102,7 @@ function getRandomFace(faces) {
   return face[0];
 }
 
-function breakApart() {
+function breakApart(geometry, verticesPerChunk) {
   const faces = [];
 
   const numFaces = geometry.index.count / 3;
@@ -128,7 +120,7 @@ function breakApart() {
     const splitFaces = [];
     const first = getRandomFace(faces);
     splitFaces.push(first);
-    for (let i = 0; i < CHUNK; i++) {
+    for (let i = 0; i < verticesPerChunk; i++) {
       const adjacentFace = getAdjacentFace(faces, splitFaces);
       if (adjacentFace) {
         splitFaces.push(adjacentFace);
@@ -180,8 +172,6 @@ function breakApart() {
 function extrude(geometry) {
   const welded = weld(geometry);
 
-  console.log(welded.attributes.position.count, welded.index.count);
-
   const geo = new BufferGeometry();
 
   const newPositions = new Float32Array(
@@ -197,7 +187,7 @@ function extrude(geometry) {
         welded.attributes.position.array[i + 1],
         welded.attributes.position.array[i + 2]
       )
-      .setLength(0.95);
+      .setLength(0.9);
     newPositions[ptr] = tmp.x;
     newPositions[ptr + 1] = tmp.y;
     newPositions[ptr + 2] = tmp.z;
@@ -249,40 +239,35 @@ function extrude(geometry) {
 
   geo.setIndex(new BufferAttribute(newIndices, 1));
   geo.__center = geometry.__center;
-  // debugger;
 
   return geo;
 }
 
-console.time("break");
-const geometries = breakApart();
-console.timeEnd("break");
-
-// const material = new MeshNormalMaterial({ wireframe: !true, side: DoubleSide });
-const material = new MeshStandardMaterial({
+const material = new MeshNormalMaterial({
   wireframe: !true,
   side: DoubleSide,
 });
 
-material.flatShading = true;
-const center = new Vector3();
-const fragments = [];
-for (const geo of geometries) {
-  const extrudedGeo = extrude(geo);
-  const piece = new Mesh(extrudedGeo, material);
-  piece.geometry.computeVertexNormals();
-  piece.geometry.computeBoundingBox();
-  piece.geometry.boundingBox.getCenter(center);
-  piece.geometry.center();
-  piece.position.copy(center);
-  fragments.push(piece);
+function generate(VERTICES = 100, VERTICES_PER_CHUNK = 20) {
+  console.time("generation");
+  const geometry = generateSphere(VERTICES);
+  const geometries = breakApart(geometry, VERTICES_PER_CHUNK);
+
+  material.flatShading = true;
+  const center = new Vector3();
+  const fragments = [];
+  for (const geo of geometries) {
+    const extrudedGeo = extrude(geo);
+    const piece = new Mesh(extrudedGeo, material);
+    piece.geometry.computeVertexNormals();
+    piece.geometry.computeBoundingBox();
+    piece.geometry.boundingBox.getCenter(center);
+    piece.geometry.center();
+    piece.position.copy(center);
+    fragments.push(piece);
+  }
+  console.timeEnd("generation");
+  return fragments;
 }
 
-// const extrudedGeo = extrude(new PlaneBufferGeometry(1, 1));
-// extrudedGeo.__center = new Vector3(0, 0, 0);
-// const piece = new Mesh(extrudedGeo, material);
-// piece.geometry.computeVertexNormals();
-// piece.geometry.computeBoundingBox();
-// fragments.push(piece);
-
-export { fragments };
+export { generate };
