@@ -9,7 +9,6 @@ import {
 import {
   CameraHelper,
   Vector3,
-  DoubleSide,
   PCFSoftShadowMap,
   DirectionalLight,
   MeshStandardMaterial,
@@ -31,7 +30,6 @@ import { randomInRange, mod, clamp, parabola } from "../modules/Maf.js";
 
 const material = new MeshStandardMaterial({
   wireframe: !true,
-  side: DoubleSide,
 });
 material.flatShading = true;
 
@@ -60,7 +58,7 @@ dirLight.shadow.bias = -0.0001;
 dirLight.shadow.mapSize.width = 2048;
 dirLight.shadow.mapSize.height = 2048;
 
-const r = 4;
+const r = 5;
 dirLight.shadow.camera.left = -r;
 dirLight.shadow.camera.right = r;
 dirLight.shadow.camera.top = r;
@@ -91,20 +89,20 @@ function randomizeTransforms() {
 const group = new Group();
 scene.add(group);
 
-camera.position.set(10, 10, 10);
+camera.position.set(10, 10, 10).setLength(8);
 camera.lookAt(scene.position);
 
 const controls = getControls();
 controls.minDistance = 3;
 controls.maxDistance = 100;
-controls.enablePan = false;
+// controls.enablePan = false;
 
 const colorFBO = getFBO(1, 1, { samples: 4 });
 const zoomFBO = getFBO(1, 1, { samples: 4 });
 let fragments = [];
 
 function add() {
-  const vertices = 400; //Math.round(randomInRange(100, 1000));
+  const vertices = Math.round(randomInRange(100, 500));
   const verticesPerChunk = Math.round(
     randomInRange(0.25 * vertices, 0.5 * vertices)
   );
@@ -144,8 +142,10 @@ function render() {
   const dt = t - prevTime;
   prevTime = t;
 
-  if (running) {
-    time += dt;
+  if (running || invalidate) {
+    if (!invalidate) {
+      time += dt;
+    }
 
     group.rotation.x = time / 5000;
     group.rotation.y = time / 3000;
@@ -153,6 +153,14 @@ function render() {
     const a = parabola(mod(time / 2000, 1), 1);
     const b = Easings.InOutQuint(a);
     const dir = new Vector3();
+    const rumble = new Vector3();
+
+    if (!invalidate) {
+      if (a < 0.1) {
+        randomizeTransforms();
+      }
+    }
+    invalidate = false;
 
     for (const fragment of fragments) {
       dir
@@ -160,6 +168,11 @@ function render() {
         .normalize()
         .multiplyScalar(fragment.dist * b);
       fragment.position.copy(fragment.origin).add(dir);
+      rumble
+        .set(randomInRange(-1, 1), randomInRange(-1, 1), randomInRange(-1, -1))
+        .setLength(0.05)
+        .multiplyScalar(b);
+      fragment.position.add(rumble);
       fragment.rotation.set(
         fragment.rot.x * b,
         fragment.rot.y * b,
@@ -214,28 +227,29 @@ function goFullscreen() {
 }
 
 let running = true;
+let invalidate = false;
 
 window.addEventListener("keydown", (e) => {
   if (e.code === "KeyR") {
     remove();
     add();
     randomize();
+    invalidate = true;
   }
+
   if (e.code === "Space") {
     running = !running;
   }
   if (e.code === "KeyF") {
     goFullscreen();
   }
-  if (e.code === "KeyT") {
-    for (const fragment of fragments) {
-      fragment.visible = !fragment.visible;
-    }
-  }
 });
 
 document.querySelector("#randomizeBtn").addEventListener("click", (e) => {
+  remove();
+  add();
   randomize();
+  invalidate = true;
 });
 
 document.querySelector("#pauseBtn").addEventListener("click", (e) => {

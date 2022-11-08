@@ -6,6 +6,7 @@ import {
   DoubleSide,
   MeshStandardMaterial,
   MeshNormalMaterial,
+  PlaneBufferGeometry,
 } from "../third_party/three.module.js";
 import Delaunator from "../third_party/delaunator.js";
 import { randomInRange } from "../modules/Maf.js";
@@ -201,9 +202,11 @@ function extrude(geometry) {
 
   ptr = welded.index.count;
   const maxFace = Math.max(...welded.index.array);
-  for (let i = 0; i < welded.index.count; i++) {
-    newIndices[ptr] = welded.index.array[i] + maxFace + 1;
-    ptr++;
+  for (let i = 0; i < welded.index.count; i += 3) {
+    newIndices[ptr] = welded.index.array[i + 2] + maxFace + 1;
+    newIndices[ptr + 1] = welded.index.array[i + 1] + maxFace + 1;
+    newIndices[ptr + 2] = welded.index.array[i] + maxFace + 1;
+    ptr += 3;
   }
 
   for (let i = 0; i < welded.index.count; i += 3) {
@@ -214,12 +217,12 @@ function extrude(geometry) {
     const e = b + maxFace + 1;
     const f = c + maxFace + 1;
     // face 1
-    newIndices[ptr] = a;
+    newIndices[ptr] = d;
     newIndices[ptr + 1] = b;
-    newIndices[ptr + 2] = d;
-    newIndices[ptr + 3] = d;
+    newIndices[ptr + 2] = a;
+    newIndices[ptr + 3] = e;
     newIndices[ptr + 4] = b;
-    newIndices[ptr + 5] = e;
+    newIndices[ptr + 5] = d;
     // face 2
     newIndices[ptr + 6] = b;
     newIndices[ptr + 7] = e;
@@ -228,12 +231,12 @@ function extrude(geometry) {
     newIndices[ptr + 10] = e;
     newIndices[ptr + 11] = f;
     // face 3
-    newIndices[ptr + 12] = a;
+    newIndices[ptr + 12] = c;
     newIndices[ptr + 13] = d;
-    newIndices[ptr + 14] = c;
-    newIndices[ptr + 15] = c;
+    newIndices[ptr + 14] = a;
+    newIndices[ptr + 15] = f;
     newIndices[ptr + 16] = d;
-    newIndices[ptr + 17] = f;
+    newIndices[ptr + 17] = c;
     ptr += 18;
   }
 

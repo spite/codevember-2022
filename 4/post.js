@@ -74,7 +74,7 @@ void main() {
   /* switch back from pre-multiplied alpha */
   fragColor.rgb /= fragColor.a + 0.00001;
 
-  fragColor += texture(colorTexture,vUv); 
+  // fragColor += texture(colorTexture,vUv); 
 }
 `;
 
@@ -92,6 +92,8 @@ uniform sampler2D blur4Texture;
 
 uniform float vignetteBoost;
 uniform float vignetteReduction;
+
+uniform bool showRays;
 
 uniform float time;
 
@@ -117,21 +119,21 @@ void main() {
   vec4 color = texture(inputTexture, vUv);
   vec4 zoom = texture(zoomTexture, vUv);
 
-  float factor = 40.;
+  float factor = 10.;
   vec4 b =  b0 / factor;
   b +=  2.*b1 / factor;
   b +=  4.*b2 / factor;
   b +=  8.*b3 / factor;
   b +=  16.*b4 / factor;
 
-  fragColor = screen(zoom, b, 1.);
+  fragColor = screen(color, zoom, 1.);
+  fragColor = screen(fragColor, b, 1.);
   
   fragColor *= vignette(vUv, vignetteBoost, vignetteReduction);
   fragColor += .05 * noise(gl_FragCoord.xy, time);
   fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.), vec3(.8));
   fragColor.a = 1.;
 
-  // fragColor = zoom;
 }
 `;
 
@@ -164,7 +166,7 @@ void main() {
   }
   accum /= total;
   fragColor = vec4(accum.rgb , 1.);
-  // fragColor += .01 * noise(gl_FragCoord.xy, time);
+  fragColor += .01 * noise(gl_FragCoord.xy, time);
 }`;
 
 class Post {
@@ -224,6 +226,7 @@ class Post {
         blur3Texture: { value: null },
         blur4Texture: { value: null },
         time: { value: 0 },
+        showRays: { value: false },
       },
       vertexShader: orthoVertexShader,
       fragmentShader: finalFragmentShader,
@@ -238,7 +241,7 @@ class Post {
       wrapT: ClampToEdgeWrapping,
     });
 
-    this.bloomPass = new BloomPass(5, 5);
+    this.bloomPass = new BloomPass(3, 5);
   }
 
   setSize(w, h) {
@@ -256,7 +259,7 @@ class Post {
 
     this.zoomPass.render(this.renderer);
 
-    this.bloomPass.source = this.zoomPass.texture;
+    this.bloomPass.source = zoomFBO; //  this.zoomPass.texture;
     this.bloomPass.render(this.renderer);
 
     this.finalPass.shader.uniforms.blur0Texture.value =
@@ -271,8 +274,7 @@ class Post {
       this.bloomPass.blurPasses[4].texture;
     this.finalPass.shader.uniforms.time.value = Math.random() * 100000;
 
-    this.finalPass.render(this.renderer, true);
-    return;
+    this.finalPass.render(this.renderer);
 
     this.colorPass.shader.uniforms.inputTexture.value = this.finalPass.texture;
     this.colorPass.shader.uniforms.time.value = Math.random() * 100000;
