@@ -17,7 +17,7 @@ import { getFBO } from "../modules/fbo.js";
 import { Post } from "./post.js";
 // import { capture } from "../modules/capture.js";
 
-const controls = getControls();
+// const controls = getControls();
 
 const post = new Post(renderer);
 
@@ -78,7 +78,7 @@ function render() {
     disc.lookAt(camera.position);
     disc.material.uniforms.time.value = time / 500;
 
-    // camera.position.set(0, 0, 10 + 2 * Math.cos(time / 2000));
+    camera.position.set(0, 0, 10 + 2 * Math.cos(time / 2000));
 
     planet.position.x = 0.1 * Math.cos(time / 1500);
     planet.position.y = 0.1 * Math.cos(time / 1250);
