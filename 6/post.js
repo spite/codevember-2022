@@ -138,7 +138,7 @@ class Post {
     this.finalShader = new RawShaderMaterial({
       uniforms: {
         resolution: { value: new Vector2(1, 1) },
-        vignetteBoost: { value: params.vignetteBoost || 1.1 },
+        vignetteBoost: { value: params.vignetteBoost || 1.2 },
         vignetteReduction: { value: params.vignetteReduction || 1.1 },
         inputTexture: { value: this.colorPass.texture },
         blur0Texture: { value: null },
