@@ -51,11 +51,11 @@ function render() {
       time += dt;
     }
 
-    const a = time / 100000;
+    const a = time / 200000;
     const r = 100;
     offset.set(r * Math.cos(a), r * Math.sin(a));
     rotation = a * 50;
-    step(renderer, time / 2000, offset, rotation);
+    step(renderer, time / 20000, offset, rotation);
     invalidate = false;
   }
 
