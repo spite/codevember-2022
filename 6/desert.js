@@ -308,6 +308,9 @@ void main() {
   color = vec4(hue * vec3(.5 * diffuse + .5 * specular + .5 *  rim), 1.);
 }`;
 
+const width = 300;
+const height = 300;
+
 const heightShader = new RawShaderMaterial({
   uniforms: {
     time: { value: 0 },
@@ -325,7 +328,7 @@ const heightPass = new ShaderPass(heightShader, {
   format: RGBAFormat,
   type: FloatType,
 });
-heightPass.setSize(300, 300);
+heightPass.setSize(width, height);
 
 const normalShader = new RawShaderMaterial({
   uniforms: {
@@ -339,7 +342,7 @@ const normalPass = new ShaderPass(normalShader, {
   format: RGBAFormat,
   type: FloatType,
 });
-normalPass.setSize(300, 300);
+normalPass.setSize(width, height);
 
 const material = new RawShaderMaterial({
   uniforms: {
@@ -388,7 +391,7 @@ function generateDiamondGridPlane(
   return geometry;
 }
 
-const geometry = generateDiamondGridPlane(10, 10, 300, 300);
+const geometry = generateDiamondGridPlane(10, 10, width, height);
 geometry.rotateX(-Math.PI / 2);
 const mesh = new Mesh(geometry, material);
 mesh.position.y = 1;
