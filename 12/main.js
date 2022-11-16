@@ -78,17 +78,11 @@ function render() {
   if (running) {
     time += dt;
 
-    // mesh.material.uniforms.time.value = time / 10000;
-
     group.rotation.x += dt / 10000;
     group.rotation.y += (dt / 10000) * 0.66;
 
-    // const a = parabola(mod(time / 2000, 1), 1);
-    // const b = Easings.InOutQuint(a);
-    // const dir = new Vector3();
     step(renderer, time / 1000, dt / 16);
     mesh2.material.uniforms.positions.value = simulation.texture;
-    // debug.material.map = simulation.texture;
   }
 
   // renderer.render(scene, camera);
@@ -111,6 +105,9 @@ randomize();
 function randomize() {
   const bkg = randomizeColors();
   renderer.setClearColor(bkg, 1);
+  const offset = randomInRange(-1000, 1000);
+  mesh.material.uniforms.offset.value = offset;
+  simulation.shader.uniforms.offset.value = offset;
 }
 
 function goFullscreen() {

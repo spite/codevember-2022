@@ -62,7 +62,7 @@ void main() {
   
   vec4 color = texture(inputTexture, vUv);
 
-  float s= 80.;
+  float s= 40.;
   vec4 b =  b0 / s;
   b +=  2.*b1 / s;
   b +=  4.*b2 / s;
@@ -74,7 +74,7 @@ void main() {
   fragColor += .01 * noise(gl_FragCoord.xy, time);
   fragColor.a = 1.;
 
-  fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.), vec3(.8));
+  fragColor.rgb = finalLevels(fragColor.rgb, vec3(.2), vec3(1.), vec3(.8));
 }
 `;
 
@@ -139,7 +139,7 @@ class Post {
       uniforms: {
         resolution: { value: new Vector2(1, 1) },
         vignetteBoost: { value: params.vignetteBoost || 1.1 },
-        vignetteReduction: { value: params.vignetteReduction || 1.1 },
+        vignetteReduction: { value: params.vignetteReduction || 0.8 },
         inputTexture: { value: this.colorPass.texture },
         blur0Texture: { value: null },
         blur1Texture: { value: null },
