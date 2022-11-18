@@ -16,7 +16,7 @@ import {
 import { shader as noiseCommon } from "../shaders/noise-common.js";
 import { shader as noise3d } from "../shaders/noise3d.js";
 import { shader as noise2d } from "../shaders/noise2d.js";
-import { randomInRange } from "../modules/Maf.js";
+import { mod, randomInRange } from "../modules/Maf.js";
 import { ShaderPingPongPass } from "../modules/ShaderPingPongPass.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
 import { shader as curl } from "../shaders/curl.js";
@@ -124,13 +124,15 @@ uniform sampler2D positions;
 uniform sampler2D gradient;
 uniform float dpr;
 uniform float time;
-uniform vec3 bkgColor;
+uniform vec3 bkgColorFrom;
+uniform vec3 bkgColorTo;
+uniform float interpolate;
 uniform float offset;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 
-out vec3 vColor;
+out float vGradientIndex;
 out float vLife;
 
 ${noiseCommon}
@@ -142,9 +144,9 @@ void main() {
   vec2 coord = position.xy;
   vec4 pos = texture(positions, coord);
   float n;
-  vec3 dunePos = getPoint(pos.xyz, n);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(dunePos.xyz, 1.);
-  vColor = bkgColor;
+  vec3 newPos = getPoint(pos.xyz, n);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos.xyz, 1.);
+  vGradientIndex = pos.w / 100.;
   gl_PointSize = 6. * dpr;
 }`;
 
@@ -152,12 +154,11 @@ const movingParticleVs = `precision highp float;
 in vec3 position;
 
 uniform sampler2D positions;
-uniform sampler2D gradient;
 uniform float dpr;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 
-out vec3 vColor;
+out float vGradientIndex;
 out float vLife;
 
 float parabola(in float x, in float k) {
@@ -168,13 +169,17 @@ void main() {
   vec2 coord = position.xy;
   vec4 pos = texture(positions, coord);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.xyz, 1.);
-  vColor = texture(gradient, vec2(pos.w/100., .5)).xyz;
+  vGradientIndex = pos.w/100.;
   gl_PointSize = (1. - (pos.w / 100.)) * 6. * dpr * position.z;
 }`;
 
 const particleFs = `precision highp float;
 in float vLife;
-in vec3 vColor;
+in float vGradientIndex;
+
+uniform sampler2D gradientFrom;
+uniform sampler2D gradientTo;
+uniform float interpolate;
 
 out vec4 fragColor;
 
@@ -183,7 +188,11 @@ void main() {
   if (dot(circCoord, circCoord) > 1.0) {
       discard;
   }
-  fragColor = vec4(vColor, .15);
+  vec2 guv = vec2(vGradientIndex, .5);
+  vec3 from = texture(gradientFrom, guv).xyz;
+  vec3 to = texture(gradientTo, guv).xyz;
+  vec3 color = mix(from, to, interpolate);
+  fragColor = vec4(color, .15);
 }`;
 
 const width = 512;
@@ -281,11 +290,14 @@ simulation.setSize(width, height);
 const material = new RawShaderMaterial({
   uniforms: {
     positions: { value: posTexture },
-    gradient: { value: null },
     time: { value: 0 },
     offset: { value: 0 },
     dpr: { value: 1 },
-    bkgColor: { value: new Color() },
+    gradientFrom: { value: null },
+    gradientTo: { value: null },
+    bkgColorFrom: { value: new Color() },
+    bkgColorTo: { value: new Color() },
+    interpolate: { value: 0 },
   },
   vertexShader: particleVs,
   fragmentShader: particleFs,
@@ -311,7 +323,9 @@ const mesh = new Points(geo, material);
 const material2 = new RawShaderMaterial({
   uniforms: {
     positions: { value: posTexture },
-    gradient: { value: null },
+    gradientFrom: { value: null },
+    gradientTo: { value: null },
+    interpolate: { value: 0 },
     dpr: { value: 1 },
   },
   vertexShader: movingParticleVs,
@@ -343,12 +357,45 @@ function step(renderer, t, dt) {
     simulation.fbos[simulation.currentFBO].texture;
 }
 
+let bkgFrom;
+const bkg = new Color();
+let paletteFrom;
+let { bkg: bkgTo, gradientTex: paletteTo } = randomizePalette();
+
+randomizeColors();
 function randomizeColors() {
-  const { bkg, gradientTex } = randomizePalette();
-  material.uniforms.bkgColor.value.copy(bkg);
-  material.uniforms.gradient.value = material2.uniforms.gradient.value =
-    gradientTex;
-  return bkg;
+  bkgFrom = bkgTo;
+  paletteFrom = paletteTo;
+  let { bkg: b2, gradientTex: g2 } = randomizePalette();
+  bkgTo = b2;
+  paletteTo = g2;
+  material.uniforms.bkgColorFrom.value.copy(bkgFrom);
+  material.uniforms.bkgColorTo.value.copy(bkgTo);
+  material.uniforms.gradientFrom.value = paletteFrom;
+  material2.uniforms.gradientFrom.value = paletteFrom;
+  material.uniforms.gradientTo.value = paletteTo;
+  material2.uniforms.gradientTo.value = paletteTo;
 }
 
-export { mesh, mesh2, simulation, posTexture, step, randomizeColors };
+let prevT = 0;
+function interpolate(time, renderer) {
+  let t = mod(time, 10000) / 10000;
+  if (t < prevT) {
+    randomizeColors();
+  }
+  prevT = t;
+  material.uniforms.interpolate.value = t;
+  material2.uniforms.interpolate.value = t;
+  bkg.copy(bkgFrom).lerp(bkgTo, t);
+  renderer.setClearColor(bkg, 1);
+}
+
+export {
+  mesh,
+  mesh2,
+  simulation,
+  posTexture,
+  step,
+  randomizeColors,
+  interpolate,
+};

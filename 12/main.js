@@ -6,31 +6,14 @@ import {
   addResize,
   resize,
 } from "../modules/renderer.js";
-import {
-  CameraHelper,
-  Vector3,
-  DoubleSide,
-  PCFSoftShadowMap,
-  DirectionalLight,
-  MeshStandardMaterial,
-  sRGBEncoding,
-  HemisphereLight,
-  ACESFilmicToneMapping,
-  Mesh,
-  MeshBasicMaterial,
-  IcosahedronGeometry,
-  Group,
-  PlaneGeometry,
-} from "../third_party/three.module.js";
-import { Easings } from "../modules/easings.js";
-import { getFBO } from "../modules/fbo.js";
+import { Group } from "../third_party/three.module.js";
 import {
   mesh,
   mesh2,
   simulation,
-  posTexture,
   step,
   randomizeColors,
+  interpolate,
 } from "./wisp.js";
 import { Post } from "./post.js";
 import { randomInRange, mod, clamp, parabola } from "../modules/Maf.js";
@@ -41,13 +24,6 @@ mesh.scale.setScalar(0.9);
 group.add(mesh);
 group.add(mesh2);
 scene.add(group);
-// const debug = new Mesh(
-//   new PlaneGeometry(10, 10),
-//   new MeshBasicMaterial({
-//     map: post,
-//   })
-// );
-// scene.add(debug);
 
 const post = new Post(renderer);
 
@@ -66,6 +42,7 @@ function init() {
 }
 
 let frames = 0;
+let invalidate = false;
 
 let time = 0;
 let prevTime = performance.now();
@@ -75,14 +52,18 @@ function render() {
   const dt = t - prevTime;
   prevTime = t;
 
-  if (running) {
-    time += dt;
+  if (running || invalidate) {
+    if (!invalidate) {
+      time += dt;
 
-    group.rotation.x += dt / 10000;
-    group.rotation.y += (dt / 10000) * 0.66;
-
+      group.rotation.x += dt / 10000;
+      group.rotation.y += (dt / 10000) * 0.66;
+    }
     step(renderer, time / 1000, dt / 16);
+
     mesh2.material.uniforms.positions.value = simulation.texture;
+    interpolate(time, renderer);
+    invalidate = false;
   }
 
   // renderer.render(scene, camera);
@@ -108,6 +89,7 @@ function randomize() {
   const offset = randomInRange(-1000, 1000);
   mesh.material.uniforms.offset.value = offset;
   simulation.shader.uniforms.offset.value = offset;
+  invalidate = true;
 }
 
 function goFullscreen() {
