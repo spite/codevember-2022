@@ -131,7 +131,7 @@ float random(vec4 seed4){
 }
 
 float sampleVisibility( vec3 coord ) {
-  float bias = 0.0001;
+  float bias = 0.00001;
   float depth = unpackDepth( texture( shadowBuffer, coord.xy));
   float dif = coord.z - depth - bias;
   float visibility  = ( dif > 0. ) ? 0. : 2.;
@@ -217,20 +217,15 @@ void main() {
   vec4 pos = texture(inputTexture, vUv);
   pos.xyz = pos.xyz + .01 * dt * curlNoise(pos.xyz * .1, time);
   pos.w += dt;
-  // if(pos.w > 0.) {
-  //   pos.y -= pos.w / 2000.;
-  // }
-  if(pos.w>100.) {
+  if(pos.w > 0.) {
+    pos.y -= pos.w / 4000.;
+  }
+  if(pos.w>100. || shock) {
     vec3 dir = normalize(pos.xyz);
     pos.xyz = (.1 + noise3d(pos.xyz * 20. + time)) * dir;
     pos.xyz += noise3d(pos.xyz * 2. + pos.w * time);
-    // pos.w = texture(originTexture, vUv).w;
     pos.w -= 100.;
   }
-  // if(pos.w>100.) {
-  //   pos = texture(originTexture, vUv);
-  //   pos.w -= 100.;
-  // }
   fragColor = pos; 
 }`;
 
