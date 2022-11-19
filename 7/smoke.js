@@ -202,30 +202,31 @@ void main() {
 
 }`;
 
-const width = 1024;
-const height = 1024;
-const posData = new Float32Array(width * height * 4);
-let ptr = 0;
-for (let y = 0; y < height; y++) {
-  for (let x = 0; x < width; x++) {
-    const phi = Math.acos(2 * Math.random() - 1) - Math.PI / 2;
-    const theta = 2 * Math.PI * Math.random();
-    const r = randomInRange(0, 1);
-    posData[ptr] = r * Math.cos(phi) * Math.cos(theta);
-    posData[ptr + 1] = r * Math.cos(phi) * Math.sin(theta);
-    posData[ptr + 2] = r * Math.sin(phi);
-    posData[ptr + 3] = randomInRange(0, 100);
-    ptr += 4;
+function generate(width, height) {
+  const posData = new Float32Array(width * height * 4);
+  let ptr = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const phi = Math.acos(2 * Math.random() - 1) - Math.PI / 2;
+      const theta = 2 * Math.PI * Math.random();
+      const r = randomInRange(0, 1);
+      posData[ptr] = r * Math.cos(phi) * Math.cos(theta);
+      posData[ptr + 1] = r * Math.cos(phi) * Math.sin(theta);
+      posData[ptr + 2] = r * Math.sin(phi);
+      posData[ptr + 3] = randomInRange(0, 100);
+      ptr += 4;
+    }
   }
+  const posTexture = new DataTexture(
+    posData,
+    width,
+    height,
+    RGBAFormat,
+    FloatType
+  );
+  posTexture.needsUpdate = true;
+  return posTexture;
 }
-const posTexture = new DataTexture(
-  posData,
-  width,
-  height,
-  RGBAFormat,
-  FloatType
-);
-posTexture.needsUpdate = true;
 
 const simFs = `precision highp float;
 precision highp sampler3D;
@@ -263,8 +264,8 @@ void main() {
 
 const simShader = new RawShaderMaterial({
   uniforms: {
-    inputTexture: { value: posTexture },
-    originTexture: { value: posTexture },
+    inputTexture: { value: null },
+    originTexture: { value: null },
     persistence: { value: 0.6 },
     time: { value: 0 },
     dt: { value: 0 },
@@ -281,12 +282,11 @@ const simulation = new ShaderPingPongPass(simShader, {
   minFilter: NearestFilter,
   magFilter: NearestFilter,
 });
-simulation.setSize(width, height);
 
 const material = new RawShaderMaterial({
   uniforms: {
-    positions: { value: posTexture },
-    original: { value: posTexture },
+    positions: { value: null },
+    original: { value: null },
     shadowBuffer: { value: null },
     shadowMatrix: { value: new Matrix4() },
     time: { value: 0 },
@@ -301,20 +301,6 @@ const material = new RawShaderMaterial({
   glslVersion: GLSL3,
   transparent: true,
 });
-
-const geo = new BufferGeometry();
-const vertices = new Float32Array(width * height * 3);
-ptr = 0;
-for (let y = 0; y < height; y++) {
-  for (let x = 0; x < width; x++) {
-    vertices[ptr] = x / width;
-    vertices[ptr + 1] = y / width;
-    vertices[ptr + 2] = 0;
-    ptr += 3;
-  }
-}
-geo.setAttribute("position", new BufferAttribute(vertices, 3));
-const mesh = new Points(geo, material);
 
 function step(renderer, dt) {
   material.uniforms.time.value += dt / 1000;
@@ -415,12 +401,36 @@ function interpolate(time, renderer) {
   return bkg;
 }
 
+function resizeBuffers(width, height) {
+  simulation.setSize(width, height);
+  const posTexture = generate(width, height);
+  simShader.uniforms.originTexture.value = posTexture;
+  simShader.uniforms.inputTexture.value = posTexture;
+  material.uniforms.positions.value = posTexture;
+  material.uniforms.original.value = posTexture;
+
+  const geo = new BufferGeometry();
+  const vertices = new Float32Array(width * height * 3);
+  let ptr = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      vertices[ptr] = x / width;
+      vertices[ptr + 1] = y / width;
+      vertices[ptr + 2] = 0;
+      ptr += 3;
+    }
+  }
+  geo.setAttribute("position", new BufferAttribute(vertices, 3));
+  const mesh = new Points(geo, material);
+
+  return mesh;
+}
+
 export {
-  mesh,
   depthMaterial,
   simulation,
-  posTexture,
   randomizeColors,
   interpolate,
   step,
+  resizeBuffers,
 };

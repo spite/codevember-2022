@@ -23,7 +23,7 @@ import {
 } from "../third_party/three.module.js";
 import { getFBO } from "../modules/fbo.js";
 import {
-  mesh,
+  resizeBuffers,
   depthMaterial,
   simulation,
   interpolate,
@@ -35,6 +35,8 @@ import { randomInRange, mod, clamp, parabola } from "../modules/Maf.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
 import { ShaderPingPongPass } from "../modules/ShaderPingPongPass.js";
 // import { capture } from "../modules/capture.js";
+
+let mesh = resizeBuffers(800, 800);
 
 const shadowSize = 1024;
 const depthFBO = getFBO(shadowSize, shadowSize, {
@@ -236,6 +238,24 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "KeyF") {
     goFullscreen();
   }
+});
+
+function resizeEffect(width, height) {
+  scene.remove(mesh);
+  mesh = resizeBuffers(width, height);
+  scene.add(mesh);
+}
+
+document.querySelector("#low").addEventListener("click", (e) => {
+  resizeEffect(512, 512);
+});
+
+document.querySelector("#mid").addEventListener("click", (e) => {
+  resizeEffect(1024, 1024);
+});
+
+document.querySelector("#high").addEventListener("click", (e) => {
+  resizeEffect(2048, 2048);
 });
 
 document.querySelector("#randomizeBtn").addEventListener("click", (e) => {
