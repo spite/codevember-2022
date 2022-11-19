@@ -7,16 +7,7 @@ import {
   resize,
 } from "../modules/renderer.js";
 import {
-  CameraHelper,
-  Vector3,
   Matrix4,
-  DoubleSide,
-  PCFSoftShadowMap,
-  DirectionalLight,
-  MeshStandardMaterial,
-  sRGBEncoding,
-  HemisphereLight,
-  ACESFilmicToneMapping,
   Mesh,
   MeshBasicMaterial,
   IcosahedronGeometry,
@@ -25,25 +16,23 @@ import {
   FloatType,
   OrthographicCamera,
   RGBAFormat,
-  PerspectiveCamera,
-  LinearFilter,
   RawShaderMaterial,
   GLSL3,
+  NearestFilter,
+  Color,
 } from "../third_party/three.module.js";
-import { Easings } from "../modules/easings.js";
 import { getFBO } from "../modules/fbo.js";
 import {
   mesh,
   depthMaterial,
   simulation,
-  posTexture,
-  randomize as randomizeColors,
+  interpolate,
+  randomizeColors,
   step,
 } from "./smoke.js";
 import { Post } from "./post.js";
 import { randomInRange, mod, clamp, parabola } from "../modules/Maf.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
-import { ShaderPass } from "../modules/ShaderPass.js";
 import { ShaderPingPongPass } from "../modules/ShaderPingPongPass.js";
 // import { capture } from "../modules/capture.js";
 
@@ -51,8 +40,8 @@ const shadowSize = 1024;
 const depthFBO = getFBO(shadowSize, shadowSize, {
   format: RGBAFormat,
   type: FloatType,
-  minFilter: LinearFilter,
-  magFilter: LinearFilter,
+  minFilter: NearestFilter,
+  magFilter: NearestFilter,
 });
 
 const blendFs = `precision highp float;
@@ -82,6 +71,8 @@ const blendDepthShader = new RawShaderMaterial({
 const blendPass = new ShaderPingPongPass(blendDepthShader, {
   format: RGBAFormat,
   type: FloatType,
+  minFilter: NearestFilter,
+  magFilter: NearestFilter,
 });
 blendPass.setSize(depthFBO.width, depthFBO.height);
 
@@ -98,6 +89,7 @@ light.position.copy(shadowCamera.position);
 scene.add(light);
 
 scene.add(mesh);
+mesh.frustumCulled = false;
 const debug = new Mesh(
   new PlaneGeometry(10, 10),
   new MeshBasicMaterial({
@@ -145,17 +137,21 @@ const biasMatrix = new Matrix4()
   .transpose();
 
 let frames = 0;
+let invalidate = false;
 
 let time = 0;
 let prevTime = performance.now();
+let bkg = new Color();
 
 function render() {
   const t = performance.now();
   const dt = t - prevTime;
   prevTime = t;
 
-  if (running) {
-    time += dt;
+  if (running || invalidate) {
+    if (!invalidate) {
+      time += dt;
+    }
 
     step(renderer, dt / 32);
     simulation.shader.uniforms.shock.value = shock;
@@ -169,6 +165,11 @@ function render() {
     blendPass.render(renderer);
     blendPass.shader.uniforms.inputTexture.value = blendPass.current.texture;
     mesh.material.uniforms.shadowBuffer.value = blendPass.texture;
+
+    mesh.rotation.y += dt / 10000;
+
+    bkg.copy(interpolate(time, renderer));
+    invalidate = false;
   }
 
   mesh.material.uniforms.shadowMatrix.value.copy(biasMatrix);
@@ -190,9 +191,9 @@ function render() {
   debug.material.map = blendPass.texture;
 
   debug.visible = false;
-  light.visible = true;
+  light.visible = false;
   scene.overrideMaterial = null;
-  renderer.setClearColor(0x202020, 1);
+  renderer.setClearColor(bkg, 1);
   // renderer.render(scene, camera);
 
   post.render(scene, camera);
@@ -212,6 +213,7 @@ let shock = false;
 function randomize() {
   randomizeColors();
   shock = true;
+  invalidate = true;
 }
 
 function goFullscreen() {

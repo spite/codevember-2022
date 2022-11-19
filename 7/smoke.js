@@ -20,15 +20,33 @@ import {
 } from "../third_party/three.module.js";
 import { shader as noiseCommon } from "../shaders/noise-common.js";
 import { shader as noise3d } from "../shaders/noise3d.js";
-import { natural, natural2 } from "../modules/palettes.js";
+import {
+  natural,
+  natural2,
+  warm,
+  warm2,
+  warm3,
+  seaside,
+  circus,
+  circus2,
+} from "../modules/palettes.js";
 import { GradientLinear } from "../modules/gradient-linear.js";
 import { randomInRange } from "../modules/Maf.js";
 import { ShaderPingPongPass } from "../modules/ShaderPingPongPass.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
 import { shader as curl } from "../shaders/curl.js";
-import { shader as hsl } from "../shaders/hsl.js";
+import { mod } from "../modules/Maf.js";
 
-const palettes = [natural, natural2];
+const palettes = [
+  natural,
+  natural2,
+  warm,
+  warm2,
+  warm3,
+  seaside,
+  circus,
+  circus2,
+];
 
 function randomizePalette() {
   const palette = palettes[Math.floor(Math.random() * palettes.length)];
@@ -38,18 +56,33 @@ function randomizePalette() {
   const steps = Math.round(randomInRange(3, 6));
   for (let i = 0; i < steps; i++) {
     const c = gradient.getAt(Math.random());
+    const la = new Color();
+    c.getHSL(la);
+    if (la.l > 0.5) {
+      la.l = 0.5;
+    }
+    c.setHSL(la.h, la.s, la.l);
     colors.push(c);
   }
 
-  // colors = colors.sort((a, b) => {
-  //   const la = new Color();
-  //   a.getHSL(la);
-  //   const lb = new Color();
-  //   b.getHSL(lb);
-  //   return la.l - lb.l;
-  // });
+  colors = colors.sort((a, b) => {
+    const la = new Color();
+    a.getHSL(la);
+    const lb = new Color();
+    b.getHSL(lb);
+    return la.l - lb.l;
+  });
 
+  // colors = [new Color(0xff00ff), new Color(0x00ff00)];
   const bkg = colors[0].clone();
+  const t = new Color();
+  bkg.getHSL(t);
+  // t.h -= 0.1;
+  t.s /= 2;
+  t.l /= 2;
+  bkg.setHSL(t.h, t.s, t.l);
+
+  //console.log(`[${colors.map((c) => c.getHex()).join(", ")}]`);
 
   const gradientData = new Uint8Array(colors.length * 4);
   for (let i = 0; i < colors.length; i++) {
@@ -68,8 +101,8 @@ function randomizePalette() {
     undefined,
     undefined,
     undefined,
-    LinearFilter,
-    LinearFilter
+    NearestFilter,
+    NearestFilter
   );
   gradientTex.needsUpdate = true;
   return { bkg, gradientTex };
@@ -80,8 +113,10 @@ in vec3 position;
 
 uniform sampler2D positions;
 uniform sampler2D original;
-uniform sampler2D gradient;
 uniform float time;
+uniform sampler2D gradientFrom;
+uniform sampler2D gradientTo;
+uniform float interpolate;
 
 uniform float dpr;
 uniform mat4 modelViewMatrix;
@@ -104,7 +139,9 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.xyz, 1.);
   vec4 origin = texture(original, coord) * 2.;
   vec2 cuv = vec2(.5 + noise3d(time + origin.xyz * .5), .5);
-  vColor = texture(gradient, cuv).rgb;
+  vec3 from = texture(gradientFrom, cuv).xyz;
+  vec3 to = texture(gradientTo, cuv).xyz;
+  vColor = mix(from, to, interpolate);
   float l = parabola(pos.w / 100., 1.);
   l = exp(l) / exp(1.);
   float s = 20. / gl_Position.z;
@@ -117,6 +154,7 @@ in vec3 vPosition;
 
 uniform mat4 shadowMatrix;
 uniform sampler2D shadowBuffer;
+uniform vec3 bkgColor;
 
 out vec4 fragColor;
 
@@ -138,8 +176,6 @@ float sampleVisibility( vec3 coord ) {
 	return visibility;
 }
 
-${hsl}
-
 void main() {
   vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
   if (dot(circCoord, circCoord) > 1.0) {
@@ -160,14 +196,10 @@ void main() {
   shadow /= float(size * size);
   shadow = clamp(shadow, 0., 1.);
 
-  vec3 hsl = rgb2hsv(vColor);
-  hsl.y += (1.-shadow) * .2;
-  hsl.z *= .2 + .8 * shadow;
-  
-  fragColor = vec4(hsv2rgb(hsl), 1.);
-  // if(gl_FragCoord.x > 1200.) {
-  //   fragColor = vec4(vColor, 1.);
-  // }
+  fragColor.rgb = vColor;
+  fragColor.rgb = mix(fragColor.rgb, bkgColor.rgb,  .5 * (1. - shadow));
+  fragColor.a = 1.;
+
 }`;
 
 const width = 1024;
@@ -251,17 +283,18 @@ const simulation = new ShaderPingPongPass(simShader, {
 });
 simulation.setSize(width, height);
 
-const { bkg, gradientTex } = randomizePalette();
-
 const material = new RawShaderMaterial({
   uniforms: {
     positions: { value: posTexture },
     original: { value: posTexture },
-    gradient: { value: gradientTex },
     shadowBuffer: { value: null },
     shadowMatrix: { value: new Matrix4() },
     time: { value: 0 },
     dpr: { value: 1 },
+    gradientFrom: { value: null },
+    gradientTo: { value: null },
+    bkgColor: { value: new Color() },
+    interpolate: { value: 0 },
   },
   vertexShader: particleVs,
   fragmentShader: particleFs,
@@ -352,9 +385,42 @@ const depthMaterial = new RawShaderMaterial({
   glslVersion: GLSL3,
 });
 
-function randomize() {
-  const { bkg, gradientTex } = randomizePalette();
-  material.uniforms.gradient.value = gradientTex;
+let bkgFrom;
+const bkg = new Color();
+let paletteFrom;
+let { bkg: bkgTo, gradientTex: paletteTo } = randomizePalette();
+
+randomizeColors();
+function randomizeColors() {
+  bkgFrom = bkgTo;
+  paletteFrom = paletteTo;
+  let { bkg: b2, gradientTex: g2 } = randomizePalette();
+  bkgTo = b2;
+  paletteTo = g2;
+  material.uniforms.gradientFrom.value = paletteFrom;
+  material.uniforms.gradientTo.value = paletteTo;
 }
 
-export { mesh, depthMaterial, simulation, posTexture, randomize, step };
+let prevT = 0;
+function interpolate(time, renderer) {
+  let t = mod(time, 20000) / 20000;
+  if (t < prevT) {
+    randomizeColors();
+  }
+  prevT = t;
+  material.uniforms.interpolate.value = t;
+  bkg.copy(bkgFrom).lerp(bkgTo, t);
+  material.uniforms.bkgColor.value.copy(bkg);
+  renderer.setClearColor(bkg, 1);
+  return bkg;
+}
+
+export {
+  mesh,
+  depthMaterial,
+  simulation,
+  posTexture,
+  randomizeColors,
+  interpolate,
+  step,
+};
