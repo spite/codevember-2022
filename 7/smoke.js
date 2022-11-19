@@ -26,6 +26,7 @@ import { randomInRange } from "../modules/Maf.js";
 import { ShaderPingPongPass } from "../modules/ShaderPingPongPass.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
 import { shader as curl } from "../shaders/curl.js";
+import { shader as hsl } from "../shaders/hsl.js";
 
 const palettes = [natural, natural2];
 
@@ -106,7 +107,8 @@ void main() {
   vColor = texture(gradient, cuv).rgb;
   float l = parabola(pos.w / 100., 1.);
   l = exp(l) / exp(1.);
-  gl_PointSize = l * 6. * dpr;
+  float s = 20. / gl_Position.z;
+  gl_PointSize = l * s * dpr;
 }`;
 
 const particleFs = `precision highp float;
@@ -129,11 +131,14 @@ float random(vec4 seed4){
 }
 
 float sampleVisibility( vec3 coord ) {
-  float bias = 0.01;
+  float bias = 0.0001;
   float depth = unpackDepth( texture( shadowBuffer, coord.xy));
-  float visibility  = ( coord.z - depth > bias ) ? 0. : 1.;
+  float dif = coord.z - depth - bias;
+  float visibility  = ( dif > 0. ) ? 0. : 2.;
 	return visibility;
 }
+
+${hsl}
 
 void main() {
   vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
@@ -144,8 +149,8 @@ void main() {
   vec4 vShadowCoord = shadowMatrix * vec4(vPosition,1.);
   vec3 shadowCoord = vShadowCoord.xyz / vShadowCoord.w;
 
-  int step = 5;
-  int size = 3 * step;
+  int step = 1;
+  int size = 1 * step;
   float shadow = 0.;
   for(int y=-size; y <size; y+= step) {
     for(int x=-size; x <size; x+= step) {
@@ -153,10 +158,16 @@ void main() {
     } 
   }
   shadow /= float(size * size);
-  shadow = .2 + .8 * shadow;
-  // shadow = 1.;
+  shadow = clamp(shadow, 0., 1.);
 
-  fragColor = vec4(vColor * shadow, .5);
+  vec3 hsl = rgb2hsv(vColor);
+  hsl.y += (1.-shadow) * .2;
+  hsl.z *= .2 + .8 * shadow;
+  
+  fragColor = vec4(hsv2rgb(hsl), 1.);
+  // if(gl_FragCoord.x > 1200.) {
+  //   fragColor = vec4(vColor, 1.);
+  // }
 }`;
 
 const width = 1024;
@@ -204,16 +215,22 @@ ${noise3d}
 
 void main() {
   vec4 pos = texture(inputTexture, vUv);
-  pos.xyz = pos.xyz + .01 * curlNoise(pos.xyz * .1, time);
+  pos.xyz = pos.xyz + .01 * dt * curlNoise(pos.xyz * .1, time);
   pos.w += dt;
-  if(shock) {
-    vec3 dir = normalize(pos.xyz);
-    pos.xyz = (.5 + .5 * noise3d(pos.xyz * 2. + time)) * dir;
-  }
+  // if(pos.w > 0.) {
+  //   pos.y -= pos.w / 2000.;
+  // }
   if(pos.w>100.) {
-    pos = texture(originTexture, vUv);
+    vec3 dir = normalize(pos.xyz);
+    pos.xyz = (.1 + noise3d(pos.xyz * 20. + time)) * dir;
+    pos.xyz += noise3d(pos.xyz * 2. + pos.w * time);
+    // pos.w = texture(originTexture, vUv).w;
     pos.w -= 100.;
   }
+  // if(pos.w>100.) {
+  //   pos = texture(originTexture, vUv);
+  //   pos.w -= 100.;
+  // }
   fragColor = pos; 
 }`;
 
@@ -221,7 +238,7 @@ const simShader = new RawShaderMaterial({
   uniforms: {
     inputTexture: { value: posTexture },
     originTexture: { value: posTexture },
-    persistence: { value: 0.8 },
+    persistence: { value: 0.6 },
     time: { value: 0 },
     dt: { value: 0 },
     shock: { value: false },
@@ -286,12 +303,25 @@ in vec3 position;
 uniform sampler2D positions;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
+uniform float time;
+
+float parabola(float x, float k) {
+  return pow(4. * x * (1. - x), k);
+}
+
+${noiseCommon}
+${noise3d}
 
 void main() {
   vec2 coord = position.xy;
   vec4 pos = texture(positions, coord);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.xyz, 1.);
-  gl_PointSize = 1.;
+  float l = parabola(pos.w / 100., 1.);
+  l = exp(l) / exp(1.);
+  float s = 1. / gl_Position.z;
+  vec2 jitter = .01 * vec2(.5 - noise3d(time + pos.xyz * .5), .5);
+  gl_Position.xy += jitter;
+  gl_PointSize = l * s;
 }`;
 
 const shadowFs = `precision highp float;
@@ -309,12 +339,18 @@ vec4 packDepth(const in float depth) {
 }
 
 void main() {
+  vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+  if (dot(circCoord, circCoord) > 1.0) {
+      discard;
+  }
+
   fragmentColor = packDepth( gl_FragCoord.z );
 }`;
 
 const depthMaterial = new RawShaderMaterial({
   uniforms: {
     positions: { value: null },
+    time: { value: 0 },
   },
   vertexShader: shadowVs,
   fragmentShader: shadowFs,

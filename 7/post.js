@@ -74,7 +74,7 @@ void main() {
   fragColor += .02 * noise(gl_FragCoord.xy, time);
   fragColor.a = 1.;
 
-  fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.), vec3(.8));
+  fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.2), vec3(.7));
 }
 `;
 

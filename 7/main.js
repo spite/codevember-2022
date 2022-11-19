@@ -25,6 +25,10 @@ import {
   FloatType,
   OrthographicCamera,
   RGBAFormat,
+  PerspectiveCamera,
+  LinearFilter,
+  RawShaderMaterial,
+  GLSL3,
 } from "../third_party/three.module.js";
 import { Easings } from "../modules/easings.js";
 import { getFBO } from "../modules/fbo.js";
@@ -38,17 +42,51 @@ import {
 } from "./smoke.js";
 import { Post } from "./post.js";
 import { randomInRange, mod, clamp, parabola } from "../modules/Maf.js";
+import { shader as orthoVs } from "../shaders/ortho.js";
+import { ShaderPass } from "../modules/ShaderPass.js";
+import { ShaderPingPongPass } from "../modules/ShaderPingPongPass.js";
 // import { capture } from "../modules/capture.js";
 
-const shadowSize = 256; //4096;
+const shadowSize = 1024;
 const depthFBO = getFBO(shadowSize, shadowSize, {
   format: RGBAFormat,
   type: FloatType,
+  minFilter: LinearFilter,
+  magFilter: LinearFilter,
 });
-mesh.material.uniforms.shadowBuffer.value = depthFBO.texture;
+
+const blendFs = `precision highp float;
+
+in vec2 vUv;
+
+uniform sampler2D inputTexture;
+uniform sampler2D depthTexture;
+
+out vec4 color;
+
+void main() {
+  vec4 base = texture(inputTexture, vUv);
+  vec4 blend = texture(depthTexture, vUv);
+  color = mix(base, blend, .1);
+}`;
+
+const blendDepthShader = new RawShaderMaterial({
+  uniforms: {
+    inputTexture: { value: depthFBO.texture },
+    depthTexture: { value: depthFBO.texture },
+  },
+  vertexShader: orthoVs,
+  fragmentShader: blendFs,
+  glslVersion: GLSL3,
+});
+const blendPass = new ShaderPingPongPass(blendDepthShader, {
+  format: RGBAFormat,
+  type: FloatType,
+});
+blendPass.setSize(depthFBO.width, depthFBO.height);
 
 let s = 5;
-const shadowCamera = new OrthographicCamera(-s, s, s, -s, 0.1, 20);
+const shadowCamera = new OrthographicCamera(-s, s, s, -s, -20, 20);
 shadowCamera.position.set(0, 10, 10);
 shadowCamera.lookAt(scene.position);
 
@@ -119,13 +157,18 @@ function render() {
   if (running) {
     time += dt;
 
-    step(renderer, dt / 16);
+    step(renderer, dt / 32);
     simulation.shader.uniforms.shock.value = shock;
     if (shock) {
       shock = false;
     }
+    depthMaterial.uniforms.time.value = randomInRange(-1000, 1000);
     depthMaterial.uniforms.positions.value = simulation.texture;
     mesh.material.uniforms.positions.value = simulation.texture;
+
+    blendPass.render(renderer);
+    blendPass.shader.uniforms.inputTexture.value = blendPass.current.texture;
+    mesh.material.uniforms.shadowBuffer.value = blendPass.texture;
   }
 
   mesh.material.uniforms.shadowMatrix.value.copy(biasMatrix);
@@ -144,9 +187,9 @@ function render() {
   renderer.setClearColor(0, 1);
   renderer.render(scene, shadowCamera);
   renderer.setRenderTarget(null);
-  debug.material.map = depthFBO.texture;
+  debug.material.map = blendPass.texture;
 
-  // debug.visible = true;
+  debug.visible = false;
   light.visible = true;
   scene.overrideMaterial = null;
   renderer.setClearColor(0x202020, 1);
