@@ -35,6 +35,7 @@ import { randomInRange } from "../modules/Maf.js";
 import { ShaderPingPongPass } from "../modules/ShaderPingPongPass.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
 import { shader as curl } from "../shaders/curl.js";
+import { shader as hsl } from "../shaders/hsl.js";
 import { mod } from "../modules/Maf.js";
 
 const palettes = [
@@ -176,6 +177,8 @@ float sampleVisibility( vec3 coord ) {
 	return visibility;
 }
 
+${hsl}
+
 void main() {
   vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
   if (dot(circCoord, circCoord) > 1.0) {
@@ -197,6 +200,11 @@ void main() {
   shadow = clamp(shadow, 0., 1.);
 
   fragColor.rgb = vColor;
+  vec3 hsl = rgb2hsv(fragColor.rgb);
+  hsl.y += .2 * (1.-shadow);
+  hsl.z -= .2 * (1.-shadow);
+  fragColor.rgb = hsv2rgb(hsl);
+
   fragColor.rgb = mix(fragColor.rgb, bkgColor.rgb,  .5 * (1. - shadow));
   fragColor.a = 1.;
 
@@ -254,10 +262,19 @@ void main() {
     pos.y -= pos.w / 4000.;
   }
   if(pos.w>100. || shock) {
-    vec3 dir = normalize(pos.xyz);
-    pos.xyz = (.1 + noise3d(pos.xyz * 20. + time)) * dir;
-    pos.xyz += noise3d(pos.xyz * 2. + pos.w * time);
-    pos.w -= 100.;
+    if(shock) {
+      vec3 dir = normalize(pos.xyz);
+      pos.xyz = (.1 + noise3d(pos.xyz * 20. + time)) * dir;
+      pos.xyz += noise3d(pos.xyz * 2. + pos.w * time);
+    } else {
+      pos.xyz = texture(originTexture, vUv).xyz;
+      vec3 dir = normalize(pos.xyz);
+      // pos.xyz += (.1 + noise3d(pos.xyz * 20. + time)) * dir;
+      pos.xyz += 2. * noise3d(pos.xyz * 2. + pos.w * time);
+    }
+    if(pos.w>0.) {
+      pos.w -= 100.;
+    }
   }
   fragColor = pos; 
 }`;

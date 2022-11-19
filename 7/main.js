@@ -80,7 +80,7 @@ blendPass.setSize(depthFBO.width, depthFBO.height);
 
 let s = 5;
 const shadowCamera = new OrthographicCamera(-s, s, s, -s, -20, 20);
-shadowCamera.position.set(0, 10, 10);
+shadowCamera.position.set(0, 10, 10).setLength(8);
 shadowCamera.lookAt(scene.position);
 
 const light = new Mesh(
