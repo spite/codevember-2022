@@ -378,12 +378,22 @@ function generateDiamondGridPlane(
       const b = y * rowWidth + x + 1;
       const c = (y + 1) * rowWidth + x;
       const d = (y + 1) * rowWidth + x + 1;
-      if (y % 2 === 0 && x % 2 === 0) {
-        indices.push(...[c, b, a]);
-        indices.push(...[c, d, b]);
+      if (y % 2 === 0) {
+        if (x % 2 === 0) {
+          indices.push(...[c, b, a]);
+          indices.push(...[c, d, b]);
+        } else {
+          indices.push(...[d, b, a]);
+          indices.push(...[c, d, a]);
+        }
       } else {
-        indices.push(...[d, b, a]);
-        indices.push(...[c, d, a]);
+        if (x % 2 === 0) {
+          indices.push(...[d, b, a]);
+          indices.push(...[c, d, a]);
+        } else {
+          indices.push(...[c, b, a]);
+          indices.push(...[c, d, b]);
+        }
       }
     }
   }
