@@ -64,11 +64,12 @@ void main() {
   
   vec4 color = texture(inputTexture, vUv);
 
-  vec4 b =  b0 / 40.;
-  b +=  2.*b1 / 40.;
-  b +=  4.*b2 / 40.;
-  b +=  8.*b3 / 40.;
-  b +=  16.*b4 / 40.;
+  float f= 40.;
+  vec4 b =  b0 / f;
+  b +=  2.*b1 / f;
+  b +=  4.*b2 / f;
+  b +=  8.*b3 / f;
+  b +=  16.*b4 / f;
 
   fragColor = screen(color, b, .5);
   fragColor *= vignette(vUv, vignetteBoost, vignetteReduction);
