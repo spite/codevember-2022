@@ -292,6 +292,7 @@ in vec2 vUv;
 
 uniform sampler2D colorMap;
 uniform sampler2D ssaoMap;
+uniform vec3 bkgColor;
 
 out vec4 color;
 
@@ -309,10 +310,10 @@ void main() {
   vec4 s = texture(ssaoMap, vUv);
   float occlusion = s.r;
 
-	vec3 hsl = rgb2hsv(c.rgb);
-	hsl.z *= 1.-occlusion;
+  vec3 hsl = rgb2hsv(c.rgb);
+  hsl.z *= 1.-occlusion;
   color.rgb = hsv2rgb(hsl);
-  color.rgb *= vec3(1.-occlusion);
+  color.rgb = mix(color.rgb, bkgColor.rgb, occlusion);
 	color.a = 1.;
 }`;
 
@@ -390,6 +391,7 @@ class SSAO {
       uniforms: {
         colorMap: { value: this.color },
         ssaoMap: { value: this.ssaoPass.texture },
+        bkgColor: { value: new Color() },
       },
       vertexShader: orthoVs,
       fragmentShader: combineFs,
@@ -437,6 +439,7 @@ class SSAO {
     this.shader.uniforms.interpolate.value = t;
     this.bkg.copy(this.bkgFrom).lerp(this.bkgTo, t);
     this.renderer.setClearColor(this.bkg, 1);
+    this.combineShader.uniforms.bkgColor.value.copy(this.bkg);
   }
 
   render(scene, camera) {
