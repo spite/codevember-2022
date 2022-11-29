@@ -133,7 +133,6 @@ void main() {
   fragColor += .05 * noise(gl_FragCoord.xy, time);
   fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.), vec3(.8));
   fragColor.a = 1.;
-
 }
 `;
 
@@ -259,7 +258,7 @@ class Post {
 
     this.zoomPass.render(this.renderer);
 
-    this.bloomPass.source = zoomFBO; //  this.zoomPass.texture;
+    this.bloomPass.source = zoomFBO;
     this.bloomPass.render(this.renderer);
 
     this.finalPass.shader.uniforms.blur0Texture.value =
