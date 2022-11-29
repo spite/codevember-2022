@@ -16,14 +16,12 @@ in vec3 position;
 in vec2 uv;
 
 uniform vec2 resolution;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
 
 out vec2 vUv;
 
 void main() {
   vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1. );
+  gl_Position =  vec4( position, 1. );
 }
 `;
 
@@ -149,6 +147,12 @@ class ScottGray2D {
     this.simulation.shader.uniforms.kill.value = randomInRange(0.05, 0.06);
     this.simulation.shader.uniforms.da.value = randomInRange(0.2, 0.21);
     this.simulation.shader.uniforms.db.value = randomInRange(0.1, 0.11);
+    console.log(
+      this.simulation.shader.uniforms.da.value,
+      this.simulation.shader.uniforms.db.value,
+      this.simulation.shader.uniforms.feed.value,
+      this.simulation.shader.uniforms.kill.value
+    );
   }
 
   get texture() {

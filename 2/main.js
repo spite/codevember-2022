@@ -93,8 +93,6 @@ function randomizeColors() {
 
 for (let i = 0; i < LAYERS; i++) {
   const layer = new Layer(renderer);
-  const z = 1 + i * layerStep;
-  // layer.scale.setScalar(z);
   scene.add(layer);
   layers.push(layer);
 }
