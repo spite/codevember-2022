@@ -3118,8 +3118,8 @@ out vec2 vUv;
 
 void main() {
   vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1. );
-}`;var zi=class{constructor(e,t={},n){this.shader=e,this.orthoScene=new _n,this.fbo=Oi(1,1,t,n),this.orthoCamera=new xn(1/-2,1/2,1/2,1/-2,1e-5,1e3),this.orthoQuad=new $e(new zt(1,1),this.shader),this.orthoQuad.scale.set(1,1,1),this.orthoScene.add(this.orthoQuad),this.texture=this.fbo.texture}render(e,t){t||e.setRenderTarget(this.fbo),e.render(this.orthoScene,this.orthoCamera),e.setRenderTarget(null)}setSize(e,t){this.fbo.setSize(e,t),this.orthoQuad.scale.set(e,t,1),this.orthoCamera.left=-e/2,this.orthoCamera.right=e/2,this.orthoCamera.top=t/2,this.orthoCamera.bottom=-t/2,this.orthoCamera.updateProjectionMatrix()}};var ol=`
+  gl_Position = vec4( position, 1. );
+}`;var zi=class{constructor(e,t={},n){this.shader=e,this.orthoScene=new _n,this.fbo=Oi(1,1,t,n),this.orthoCamera=new xn(-1,-1,-1,-1,0,1),this.orthoQuad=new $e(new zt(2,2),this.shader),this.orthoQuad.scale.set(1,1,1),this.orthoScene.add(this.orthoQuad),this.texture=this.fbo.texture}render(e,t){t||e.setRenderTarget(this.fbo),e.render(this.orthoScene,this.orthoCamera),e.setRenderTarget(null)}setSize(e,t){this.fbo.setSize(e,t),this.orthoQuad.scale.set(e,t,1)}};var ol=`
 float hash1( uint n ) 
 {
     // integer hash copied from Hugo Elias
