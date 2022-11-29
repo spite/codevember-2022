@@ -263,7 +263,7 @@ document.querySelector("#fullscreenBtn").addEventListener("click", (e) => {
 function myResize(w, h, dPR) {
   colorFBO.setSize(w * dPR, h * dPR);
   zoomFBO.setSize(w * dPR, h * dPR);
-  post.setSize(w, h, dPR);
+  post.setSize(w * dPR, h * dPR);
 }
 addResize(myResize);
 
