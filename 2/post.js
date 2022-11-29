@@ -72,12 +72,15 @@ void main() {
   b +=  8.*b3 / 40.;
   b +=  16.*b4 / 40.;
 
+  b.rgb = finalLevels(b.rgb, vec3(.2), vec3(.8), vec3(.8));
   fragColor = screen(color, b,1.);
   fragColor *= vignette(vUv, vignetteBoost, vignetteReduction);
   fragColor += .01 * noise(gl_FragCoord.xy, time);
   fragColor.a = 1.;
 
-  fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.), vec3(.8));
+  fragColor.rgb = finalLevels(fragColor.rgb, vec3(.1), vec3(1.2), vec3(.8));
+
+  // fragColor = b;
 }
 `;
 
