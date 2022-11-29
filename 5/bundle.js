@@ -3167,8 +3167,8 @@ out vec2 vUv;
 
 void main() {
   vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1. );
-}`;var Li=class{constructor(e,t={},n){this.shader=e,this.orthoScene=new Rn,this.fbo=Nn(1,1,t,n),this.orthoCamera=new hi(1/-2,1/2,1/2,1/-2,1e-5,1e3),this.orthoQuad=new Xe(new Ut(1,1),this.shader),this.orthoQuad.scale.set(1,1,1),this.orthoScene.add(this.orthoQuad),this.texture=this.fbo.texture}render(e,t){t||e.setRenderTarget(this.fbo),e.render(this.orthoScene,this.orthoCamera),e.setRenderTarget(null)}setSize(e,t){this.fbo.setSize(e,t),this.orthoQuad.scale.set(e,t,1),this.orthoCamera.left=-e/2,this.orthoCamera.right=e/2,this.orthoCamera.top=t/2,this.orthoCamera.bottom=-t/2,this.orthoCamera.updateProjectionMatrix()}};var jo=`
+  gl_Position = vec4( position, 1. );
+}`;var Li=class{constructor(e,t={},n){this.shader=e,this.orthoScene=new Rn,this.fbo=Nn(1,1,t,n),this.orthoCamera=new hi(-1,-1,-1,-1,0,1),this.orthoQuad=new Xe(new Ut(2,2),this.shader),this.orthoQuad.scale.set(1,1,1),this.orthoScene.add(this.orthoQuad),this.texture=this.fbo.texture}render(e,t){t||e.setRenderTarget(this.fbo),e.render(this.orthoScene,this.orthoCamera),e.setRenderTarget(null)}setSize(e,t){this.fbo.setSize(e,t),this.orthoQuad.scale.set(e,t,1)}};var jo=`
 float vignette(vec2 uv, float boost, float reduction) {
   vec2 position = vUv - .5;
   return boost - length(position) * reduction;
@@ -3208,7 +3208,7 @@ vec3 levelRange(vec3 color, vec3 minInput, vec3 maxInput){
 
 vec3 finalLevels(vec3 color, vec3 minInput, vec3 gamma, vec3 maxInput){
     return gammaCorrect(levelRange(color, minInput, maxInput), gamma);
-}`;var Ir=class{constructor(e,t={}){this.shader=e,this.orthoScene=new Rn,this.fbo=Nn(1,1,t),this.fbos=[this.fbo,this.fbo.clone()],this.currentFBO=0,this.orthoCamera=new hi(1/-2,1/2,1/2,1/-2,1e-5,1e3),this.orthoQuad=new Xe(new Ut(1,1),this.shader),this.orthoQuad.scale.set(1,1,1),this.orthoScene.add(this.orthoQuad)}render(e,t){t||e.setRenderTarget(this.fbos[1-this.currentFBO]),e.render(this.orthoScene,this.orthoCamera),e.setRenderTarget(null),this.currentFBO=1-this.currentFBO}get current(){return this.fbos[this.currentFBO]}get prev(){return this.fbos[1-this.currentFBO]}get texture(){return this.current.texture}setSize(e,t){this.orthoQuad.scale.set(e,t,1),this.fbos[0].setSize(e,t),this.fbos[1].setSize(e,t),this.orthoQuad.scale.set(e,t,1),this.orthoCamera.left=-e/2,this.orthoCamera.right=e/2,this.orthoCamera.top=t/2,this.orthoCamera.bottom=-t/2,this.orthoCamera.updateProjectionMatrix()}};var Qo=`
+}`;var Ir=class{constructor(e,t={}){this.shader=e,this.orthoScene=new Rn,this.fbo=Nn(1,1,t),this.fbos=[this.fbo,this.fbo.clone()],this.currentFBO=0,this.orthoCamera=new hi(-1,-1,-1,-1,0,1),this.orthoQuad=new Xe(new Ut(2,2),this.shader),this.orthoQuad.scale.set(1,1,1),this.orthoScene.add(this.orthoQuad)}render(e,t){t||e.setRenderTarget(this.fbos[1-this.currentFBO]),e.render(this.orthoScene,this.orthoCamera),e.setRenderTarget(null),this.currentFBO=1-this.currentFBO}get current(){return this.fbos[this.currentFBO]}get prev(){return this.fbos[1-this.currentFBO]}get texture(){return this.current.texture}setSize(e,t){this.orthoQuad.scale.set(e,t,1),this.fbos[0].setSize(e,t),this.fbos[1].setSize(e,t)}};var Qo=`
 vec4 blur13(sampler2D image, vec2 uv, vec2 direction) {
   vec2 resolution = vec2(textureSize(image,0));
   vec4 color = vec4(0.0);
