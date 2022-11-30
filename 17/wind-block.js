@@ -8,13 +8,10 @@ import {
   DoubleSide,
   Vector3,
   Data3DTexture,
-  AdditiveBlending,
-  RGBFormat,
   FloatType,
   LinearFilter,
   RGBAFormat,
   RedFormat,
-  RGFormat,
   RepeatWrapping,
 } from "../third_party/three.module.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
@@ -23,51 +20,94 @@ import { shader as noiseCommon } from "../shaders/noise-common.js";
 import { shader as curl } from "../shaders/curl.js";
 import { Shader3DPass } from "../modules/Shader3DPass.js";
 
-const geometry = new BufferGeometry();
+function buildLineGeometry() {
+  const geometry = new BufferGeometry();
 
-const LINES = 2;
-const positions = new Float32Array(4 * 3 * LINES);
-const w = 0.1;
-const h = 0.02;
-let ptr = 0;
-const d = 0.5;
-for (let i = 0; i < LINES; i++) {
-  const x = randomInRange(-d, d);
-  const y = randomInRange(-d, d);
-  const z = randomInRange(-d, d);
-  positions[ptr + 0] = x - w;
-  positions[ptr + 1] = y - h;
-  positions[ptr + 2] = z;
-  positions[ptr + 3] = x + w;
-  positions[ptr + 4] = y - h;
-  positions[ptr + 5] = z;
-  positions[ptr + 6] = x - w;
-  positions[ptr + 7] = y + h;
-  positions[ptr + 8] = z;
-  positions[ptr + 9] = x + w;
-  positions[ptr + 10] = y + h;
-  positions[ptr + 11] = z;
-  ptr += 12;
+  const LINES = 1;
+  const positions = new Float32Array(4 * 3 * LINES);
+  const w = 0.1;
+  const h = 0.02;
+  let ptr = 0;
+  const d = 0.5;
+  for (let i = 0; i < LINES; i++) {
+    const x = 0;
+    const y = 0;
+    const z = 0;
+    positions[ptr + 0] = x - w;
+    positions[ptr + 1] = y - h;
+    positions[ptr + 2] = z;
+    positions[ptr + 3] = x + w;
+    positions[ptr + 4] = y - h;
+    positions[ptr + 5] = z;
+    positions[ptr + 6] = x - w;
+    positions[ptr + 7] = y + h;
+    positions[ptr + 8] = z;
+    positions[ptr + 9] = x + w;
+    positions[ptr + 10] = y + h;
+    positions[ptr + 11] = z;
+    ptr += 12;
+  }
+
+  const indices = [];
+  ptr = 0;
+  for (let i = 0; i < LINES; i++) {
+    indices.push(...[ptr + 0, ptr + 1, ptr + 2]);
+    indices.push(...[ptr + 3, ptr + 2, ptr + 1]);
+    ptr += 4;
+  }
+  geometry.setAttribute("position", new BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+
+  return geometry;
 }
 
-const indices = [];
-ptr = 0;
-for (let i = 0; i < LINES; i++) {
-  indices.push(...[ptr + 0, ptr + 1, ptr + 2]);
-  indices.push(...[ptr + 3, ptr + 2, ptr + 1]);
-  ptr += 4;
+function buildArrowGeometry() {
+  const geometry = new BufferGeometry();
+
+  const LINES = 1;
+  const positions = new Float32Array(3 * 3 * LINES);
+  const w = 0.1;
+  const h = 0.02;
+  let ptr = 0;
+  const d = 0.5;
+  for (let i = 0; i < LINES; i++) {
+    const x = 0; //randomInRange(-d, d);
+    const y = 0; //randomInRange(-d, d);
+    const z = 0; //randomInRange(-d, d);
+    positions[ptr + 0] = x - w;
+    positions[ptr + 1] = y - h;
+    positions[ptr + 2] = z;
+    positions[ptr + 3] = x + w;
+    positions[ptr + 4] = y;
+    positions[ptr + 5] = z;
+    positions[ptr + 6] = x - w;
+    positions[ptr + 7] = y + h;
+    positions[ptr + 8] = z;
+    ptr += 9;
+  }
+
+  const indices = [];
+  ptr = 0;
+  for (let i = 0; i < LINES; i++) {
+    indices.push(...[ptr + 0, ptr + 1, ptr + 2]);
+    ptr += 4;
+  }
+  geometry.setAttribute("position", new BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  return geometry;
 }
 
-geometry.setAttribute("position", new BufferAttribute(positions, 3));
-geometry.setIndex(indices);
+const arrowGeometry = buildArrowGeometry();
+const lineGeometry = buildLineGeometry();
+const geometry = lineGeometry;
 
-const WIDTH = 64;
-const HEIGHT = 64;
-const DEPTH = 64;
+const WIDTH = 100;
+const HEIGHT = 100;
+const DEPTH = 100;
 const CELLS = WIDTH * HEIGHT * DEPTH;
 
 const offsets = new Float32Array(CELLS);
-ptr = 0;
+let ptr = 0;
 const p = new Vector3();
 for (let z = 0; z < DEPTH; z++) {
   for (let y = 0; y < HEIGHT; y++) {
@@ -216,7 +256,7 @@ const material = new RawShaderMaterial({
 });
 
 const mesh = new InstancedMesh(geometry, material, CELLS);
-mesh.scale.set(0.05, 0.05, 0.05);
+mesh.scale.set(0.033, 0.033, 0.033);
 ptr = 0;
 const s = 0.1;
 const mat = new Matrix4();
@@ -238,4 +278,4 @@ function update(renderer, time) {
   }
 }
 
-export { mesh, update, curlPass };
+export { mesh, update, curlPass, arrowGeometry, lineGeometry };

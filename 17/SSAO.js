@@ -111,8 +111,9 @@ in vec3 normal;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
-
+uniform float time;
 uniform sampler3D directionsTex;
+uniform vec2 scale;
 
 out float v;
 out vec3 col;
@@ -130,20 +131,25 @@ float atan2(in float y, in float x) {
   return mix(PI/2.0 - atan(x,y), atan(y,x), s);
 }
 
+float parabola(in float x, in float k) {
+  return pow(4. * x * (1. - x), k);
+}
+
 void main() {
   vec4 pos = instanceMatrix * vec4(vec3(0.), 1.0);
   vec3 size = vec3(textureSize(directionsTex, 0));
   vec4 data = texture(directionsTex, pos.xyz/size);
   vec3 dir = data.xyz;
   col = dir + 1.;
+  float offset = mod(time + data.w * 100., 1.)/1.;
   vec3 ppos = vec3(position.xy, 0.);
   v = ppos.x + .5 + data.w; 
   pos.xyz -= (size)/ 2.;
   vec4 mvPosition = modelViewMatrix * pos;
   dir = ((modelViewMatrix * vec4(dir, 0.)).xyz);
   float a = atan2(dir.x, dir.y);
-  float s = .2;
-  vec4 mvP =  (mvPosition + vec4(rotate2d(a) * ppos.xy * s, 0., 0.));
+  float s =  parabola(offset, 5.);
+  vec4 mvP =  (mvPosition + vec4(rotate2d(a) * (ppos.xy * s * scale * .2 + vec2(.2 * offset,0.)), 0., 0.));
   vPosition = mvP.xyz;
   gl_Position = projectionMatrix * mvP;
   depth = clamp(gl_Position.z / gl_Position.w, 0., 1.);
@@ -159,6 +165,7 @@ in vec3 vPosition;
 uniform float time;
 uniform float near;
 uniform float far;
+uniform float threshold;
 
 uniform sampler2D gradientFrom; 
 uniform sampler2D gradientTo;
@@ -177,14 +184,10 @@ float linearizeDepth(float z) {
 void main() {
   float c = mod(v+time, 1.);
   
-  if(c<length(col)-1.5) {
+  if(c<length(col)-threshold) {
     discard;
   }
   
-  if(col.x<0. || col.y <0. || col.z < 0.) {
-    discard;
-  }
-
   vec2 uv = vec2(length(col)/4., .5);
   vec3 from = texture(gradientFrom, uv).rgb;
   vec3 to = texture(gradientTo, uv).rgb;
@@ -338,6 +341,8 @@ class SSAO {
         gradientFrom: { value: null },
         gradientTo: { value: null },
         interpolate: { value: 0 },
+        scale: { value: new Vector2(1, 1) },
+        threshold: { value: 1.5 },
       },
       vertexShader,
       fragmentShader,

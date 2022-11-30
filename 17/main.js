@@ -6,10 +6,17 @@ import {
   addResize,
   resize,
 } from "../modules/renderer.js";
-import { mesh, update, curlPass } from "./wind-block.js";
+import {
+  mesh,
+  update,
+  curlPass,
+  arrowGeometry,
+  lineGeometry,
+} from "./wind-block.js";
 
 import { SSAO } from "./SSAO.js";
 import { Post } from "./post.js";
+import { randomInRange } from "../modules/Maf.js";
 // import { capture } from "../modules/capture.js";
 
 const ssao = new SSAO(renderer);
@@ -86,7 +93,14 @@ function render() {
 }
 
 let invalidate = false;
+const geometries = [arrowGeometry, lineGeometry];
 function randomize() {
+  mesh.geometry = geometries[Math.floor(Math.random() * geometries.length)];
+  ssao.shader.uniforms.scale.value.set(
+    randomInRange(0.8, 1.2),
+    randomInRange(0.8, 2)
+  );
+  ssao.shader.uniforms.threshold.value = randomInRange(1, 3);
   ssao.randomizeColors();
   invalidate = true;
 }
