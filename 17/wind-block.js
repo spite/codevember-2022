@@ -256,7 +256,7 @@ const material = new RawShaderMaterial({
 });
 
 const mesh = new InstancedMesh(geometry, material, CELLS);
-mesh.scale.set(0.033, 0.033, 0.033);
+mesh.scale.set(0.03, 0.03, 0.03);
 ptr = 0;
 const s = 0.1;
 const mat = new Matrix4();
