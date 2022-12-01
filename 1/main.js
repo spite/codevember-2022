@@ -7,28 +7,36 @@ import {
   resize,
 } from "../modules/renderer.js";
 import {
-  CameraHelper,
   Vector3,
-  DoubleSide,
-  PCFSoftShadowMap,
-  DirectionalLight,
-  MeshStandardMaterial,
-  sRGBEncoding,
-  HemisphereLight,
-  ACESFilmicToneMapping,
   Mesh,
-  MeshBasicMaterial,
-  IcosahedronGeometry,
+  TorusGeometry,
+  TorusKnotGeometry,
   Group,
   BackSide,
   FrontSide,
 } from "../third_party/three.module.js";
 import { Easings } from "../modules/easings.js";
 import { getFBO } from "../modules/fbo.js";
-import { mesh } from "./object.js";
+import { material } from "./object.js";
 import { Post } from "./post.js";
 import { randomInRange, mod, clamp, parabola } from "../modules/Maf.js";
 // import { capture } from "../modules/capture.js";
+
+const geometries = [
+  new TorusGeometry(1, 0.5, 40, 200),
+
+  new TorusKnotGeometry(1, 0.4, 200, 40, 3, 1),
+  new TorusKnotGeometry(1, 0.4, 200, 40, 3, 2),
+
+  new TorusKnotGeometry(1, 0.4, 200, 40, 2, 1),
+  new TorusKnotGeometry(1, 0.4, 200, 40, 2, 3),
+
+  new TorusKnotGeometry(1, 0.4, 200, 40, 1, 2),
+  new TorusKnotGeometry(1, 0.4, 200, 40, 1, 3),
+  new TorusKnotGeometry(1, 0.4, 200, 40, 1, 4),
+];
+
+const mesh = new Mesh(geometries[0], material);
 
 scene.add(mesh);
 
@@ -113,7 +121,9 @@ function render() {
   renderer.setAnimationLoop(render);
 }
 
-function randomize() {}
+function randomize() {
+  mesh.geometry = geometries[Math.floor(Math.random() * geometries.length)];
+}
 
 function goFullscreen() {
   if (renderer.domElement.webkitRequestFullscreen) {

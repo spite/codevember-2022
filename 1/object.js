@@ -1,14 +1,7 @@
 import {
   GLSL3,
-  TorusGeometry,
-  Mesh,
   RawShaderMaterial,
-  DataTexture,
-  RGBAFormat,
-  LinearFilter,
   TextureLoader,
-  TorusKnotGeometry,
-  BackSide,
 } from "../third_party/three.module.js";
 import { shader as noiseCommon } from "../shaders/noise-common.js";
 import { shader as noise3d } from "../shaders/noise3d.js";
@@ -119,10 +112,6 @@ void main() {
   }
 }`;
 
-// const geometry = new TorusGeometry(1, 0.5, 40, 200);
-const geometry = new TorusKnotGeometry(1, 0.4, 200, 40, 1, 3);
-//const geometry = new TorusKnotGeometry(1, 0.4, 200, 40, 1, 2);
-
 const loader = new TextureLoader();
 const noiseTexture = loader.load("../assets/noise.png");
 const matcapTexture = loader.load("../assets/matcap.png");
@@ -140,6 +129,4 @@ const material = new RawShaderMaterial({
   glslVersion: GLSL3,
 });
 
-const mesh = new Mesh(geometry, material);
-
-export { mesh };
+export { material };
