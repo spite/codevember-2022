@@ -91,6 +91,7 @@ void main() {
   vec4 f = texture(frontZoomTexture, vUv);
   
   color = clamp(mix(b/2., c, c.a) + f/2., vec4(0.), vec4(1.));
+  // color = clamp(mix(b/2., c, c.a), vec4(0.), vec4(1.));
 }`;
 
 const finalFragmentShader = `

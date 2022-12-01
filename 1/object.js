@@ -50,6 +50,7 @@ uniform float time;
 uniform sampler2D noiseTexture;
 uniform sampler2D matCapMap;
 uniform bool matcap;
+uniform float power;
 
 out vec4 color;
 
@@ -108,7 +109,7 @@ void main() {
 
   color = 2.*vec4(col, 1.);
   if(matcap) {
-    color.rgb *= vec3(1.) * clamp(pow(luma(mat.rgb), 3.), 0., 1.);
+    color.rgb *= vec3(1.) * clamp(pow(luma(mat.rgb), power), 0., 1.);
   }
 }`;
 
@@ -123,6 +124,7 @@ const material = new RawShaderMaterial({
     noiseTexture: { value: noiseTexture },
     matCapMap: { value: matcapTexture },
     matcap: { value: true },
+    power: { value: 3 },
   },
   vertexShader,
   fragmentShader,

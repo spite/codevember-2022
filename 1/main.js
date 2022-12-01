@@ -123,6 +123,7 @@ function render() {
 
 function randomize() {
   mesh.geometry = geometries[Math.floor(Math.random() * geometries.length)];
+  mesh.material.uniforms.power.value = randomInRange(2, 10);
 }
 
 function goFullscreen() {
