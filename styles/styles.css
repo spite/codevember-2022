@@ -81,6 +81,10 @@ canvas {
   color: inherit;
 }
 
+#info p span {
+  margin-right: 0.5em;
+}
+
 #info p:last-child {
   margin-bottom: 0;
 }
