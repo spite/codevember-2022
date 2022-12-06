@@ -130,7 +130,14 @@ void main() {
 
 const loader = new GLTFLoader();
 const texLoader = new TextureLoader();
-const matcapTexture = texLoader.load("../assets/matcap_1k.jpg");
+
+function loadTexture(file) {
+  return new Promise((resolve, reject) => {
+    texLoader.load("../assets/matcap_1k.jpg", (res) => {
+      resolve(res);
+    });
+  });
+}
 
 async function loadModel(file) {
   return new Promise((resolve, reject) => {
@@ -208,6 +215,7 @@ async function load() {
 }
 
 async function init(geometries) {
+  const matcapTexture = await loadTexture("../assets/matcap_1k.jpg");
   const material = new RawShaderMaterial({
     uniforms: {
       matCapMap: { value: matcapTexture },
