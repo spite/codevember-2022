@@ -31,7 +31,6 @@ import {
   circus2,
 } from "../modules/palettes.js";
 import { GradientLinear } from "../modules/gradient-linear.js";
-import { renderer } from "../modules/renderer.js";
 import { RoundedBoxGeometry } from "../third_party/RoundedBoxGeometry.js";
 
 const palettes = [
@@ -126,16 +125,11 @@ out vec3 vNormal;
 out vec3 vColor;
 out vec4 vMVPosition;
 
-float parabola(in float x, in float k) {
-  return pow(4. * x * (1. - x), k);
-}
-
 mat4 lookAt(vec3 eye, vec3 at, vec3 up) {
   vec3 zaxis = normalize(at - eye);    
   vec3 xaxis = normalize(cross(zaxis, up));
   vec3 yaxis = cross(xaxis, zaxis);
 
-  // negate(zaxis);
   zaxis = -zaxis;
 
   mat4 viewMatrix = mat4(
@@ -154,7 +148,7 @@ void main() {
   vec2 particleUv = vec2(x, y) / vec2(textureSize(positionTexture, 0));
   vec4 velocity = texture(velocityTexture, particleUv);
   vec4 particle = texture(positionTexture, particleUv);
-  float scale = .5 + .5 * velocity.w;// 1.;// parabola(particle.w / 100., .5);
+  float scale = .5 + .5 * velocity.w;
   mat4 rot = lookAt(particle.xyz, particle.xyz + velocity.xyz, vec3(0., 1., 0.));
   vMVPosition = modelViewMatrix * vec4((rot * vec4(position * scale * 2., 1.)).xyz + particle.xyz, 1.);
   gl_Position = projectionMatrix * vMVPosition;
@@ -200,7 +194,7 @@ const PARTICLES = WIDTH * HEIGHT;
 
 const particles = new InstancedMesh(geometry, material, PARTICLES);
 
-const d = 0.005;
+const d = 1; //0.005;
 let ptr = 0;
 const originPositions = new Float32Array(WIDTH * HEIGHT * 4);
 const tmp = new Vector3();
@@ -298,6 +292,7 @@ uniform float seed;
 uniform float time;
 uniform float delta;
 uniform float turn;
+uniform vec3 predator;
 
 uniform float alignmentRadius;
 uniform float cohesionRadius;
@@ -318,8 +313,13 @@ vec3 random3(vec3 p, in float seed) {
   );
 }
 
-float parabola(in float x, in float k) {
-  return pow(4. * x * (1. - x), k);
+vec3 slerp(in vec3 a, in vec3 b, in float t) {
+  float alpha = acos(min(max(dot(a, b), -1.), 1.));
+  float sinTotal = sin(alpha);
+
+  float ratioA = sin((1. - t) * alpha) / sinTotal;
+  float ratioB = sin(t * alpha) / sinTotal;
+  return ratioA * a + ratioB * b;
 }
 
 void main() {
@@ -333,13 +333,6 @@ void main() {
     velocity = texture(velocityTexture, vUv);
 
     float group = position.w;
-
-    // position.w += .1;//delta;
-    // if(position.w>100.) {
-    //   position.xyz = texture(originPositionTexture, vUv).xyz;
-    //   position.w -= 100.;
-    //   return;
-    // }
 
     vec3 pos;
     vec3 dir;
@@ -358,8 +351,6 @@ void main() {
     float cohesionTotal = 0.;
 
     vec3 acceleration = vec3(0.);
-
-    // Seek
     
     for(float y = turn; y < size.y; y += 3.){
       for(float x = 0.0; x < size.x; x++){
@@ -390,7 +381,7 @@ void main() {
             
           // Separation
           if(dist < separationRadius) {
-            separation -= dir;
+            separation += -(dir) / (1.+pow(dist*100., 2.));
           }
           
         }
@@ -401,9 +392,22 @@ void main() {
     vec3 wander = (random3(position.xyz, seed) - .5) * .02;
 
     // Seek
-    vec3 seek = - position.xyz;
+    vec3 seek = predator - position.xyz;
+    seek += .1 * (random3(position.zyx, seed) - .5);
     seek = clamp(seek, vec3(-.01), vec3(.01));
     seek *= .01;
+
+    // Center
+    vec3 recenter = predator - position.xyz;
+    recenter *= .005;
+
+    // Flee
+    vec3 dd = (position.xyz - predator);
+    float dl = length(dd);
+    dd += .1 * (random3(position.xyz, seed) - .5);
+    vec3 flee = vec3(0.);
+    flee = normalize(dd) / pow(dl*100., 2.);
+    flee = clamp(flee, vec3(-.01), vec3(.01));
 
     // Alignment
     alignment /= max(alignmentTotal, 1.);
@@ -415,28 +419,31 @@ void main() {
     cohesion = clamp(cohesion, vec3(-.01), vec3(.01));
 
     // Separation
-    separation = clamp(separation, vec3(-.01), vec3(.01));
+    // separation = clamp(separation, vec3(-.01), vec3(.01));
+    separation += .1 * (random3(position.xzy, seed) - .5);
 
-    acceleration = wander + seek + separation + alignment + cohesion - velocity.xyz;
-    
+    acceleration = recenter + separation + wander + seek + alignment + cohesion - velocity.xyz;
+
     vec3 newVel = velocity.xyz;
 
     newVel.xyz += acceleration * .1;
-    newVel.xyz = normalize(newVel.xyz) * .01;
-    // newVel.xyz = clamp(newVel.xyz, vec3(-.01), vec3(.01));
-    // float impulse = .5 + .5 * sin(time + 100. * velocity.w);
-    // impulse = parabola(impulse, .5);
-    // newVel.xyz *= .5 + .5 * impulse;
+    newVel.xyz = normalize(newVel.xyz) * .005;
 
-    velocity.xyz = newVel * .5;
-    velocity.xyz *= (1.5-velocity.w);
+    newVel.xyz *= (1.5-velocity.w);
+    
+    velocity.xyz = slerp(velocity.xyz, newVel.xyz, .25 + .5 * velocity.w );
+    velocity.xyz += flee;
+    // velocity.y *= .1;
 
     position.xyz += velocity.xyz;
 
     // Bounds
-    float s = 3.;
-    position.xyz = mod(position.xyz + vec3(.5*s), vec3(1.*s)) - .5*s;
+    vec3 bounds = vec3(3., 3., .1);
+    position.xyz = mod(position.xyz + .5 * bounds, bounds) - .5 * bounds;
     
+    if(vUv.x < 1. / 128. && vUv.y < 1. / 128.) {
+      position.xyz = predator;
+    }
   }
 }`;
 
@@ -463,7 +470,8 @@ const simShader = new RawShaderMaterial({
     time: { value: 0 },
     alignmentRadius: { value: 0.2 },
     cohesionRadius: { value: 0.4 },
-    separationRadius: { value: 0.4 },
+    separationRadius: { value: 0.1 },
+    predator: { value: new Vector3() },
   },
   vertexShader: simVs,
   fragmentShader: simFs,
@@ -505,9 +513,9 @@ function randomizeColors(renderer) {
 }
 
 function randomizeValues() {
-  simShader.uniforms.alignmentRadius.value = randomInRange(0.2, 0.4);
-  simShader.uniforms.cohesionRadius.value = randomInRange(0.4, 0.6);
-  simShader.uniforms.separationRadius.value = randomInRange(0.4, 0.6);
+  simShader.uniforms.alignmentRadius.value = randomInRange(0.1, 0.4);
+  simShader.uniforms.cohesionRadius.value = randomInRange(0.1, 0.6);
+  simShader.uniforms.separationRadius.value = randomInRange(0.1, 0.6);
 }
 
 export { particles, simShader, step, randomizeColors, randomizeValues };
