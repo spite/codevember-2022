@@ -80,16 +80,21 @@ function render() {
     time += dt;
     step();
   }
-  renderer.render(scene, camera);
+  // renderer.render(scene, camera);
 
   ssao.shader.uniforms.positionTexture.value =
     particles.material.uniforms.positionTexture.value;
-  ssao.shader.uniforms.velocityTexture =
+  ssao.shader.uniforms.velocityTexture.value =
     particles.material.uniforms.velocityTexture.value;
-  ssao.shader.uniforms.gradientTexture =
+  ssao.shader.uniforms.gradientTexture.value =
     particles.material.uniforms.gradientTexture.value;
   ssao.shader.uniforms.types.value = particles.material.uniforms.types.value;
-
+  ssao.shader.uniforms.bkgColor.value.copy(
+    particles.material.uniforms.bkgColor.value
+  );
+  ssao.combineShader.uniforms.bkgColor.value.copy(
+    particles.material.uniforms.bkgColor.value
+  );
   ssao.render(renderer, scene, camera);
   // post.render(ssao.output);
 
@@ -142,7 +147,7 @@ document.querySelector("#fullscreenBtn").addEventListener("click", (e) => {
   goFullscreen();
 });
 
-renderer.setClearColor(0x101010, 1);
+renderer.setClearColor(0xffffff, 1);
 
 function myResize(w, h, dPR) {
   ssao.setSize(w, h, dPR);

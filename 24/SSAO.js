@@ -10,6 +10,7 @@ import {
   Vector2,
   PlaneGeometry,
   OrthographicCamera,
+  Color,
 } from "../third_party/three.module.js";
 import { shader as orthoVs } from "../shaders/ortho.js";
 import { shader as hsl } from "../shaders/hsl.js";
@@ -71,6 +72,7 @@ layout(location = 2) out vec4 color;
 
 uniform float near;
 uniform float far;
+uniform vec3 bkgColor;
 
 in vec3 vColor;
 in vec4 vMVPosition;
@@ -86,7 +88,9 @@ void main() {
   vec3 n = normalize(cross(X,Y));
 
   float diffuse = .5 + .5 * max(dot(n, normalize(vec3(1.))), 0.);
-  color = vec4(vColor * diffuse, 1.);
+  vec3 c = vColor;
+  c += .1 * n.y;
+  color = vec4(vec3(c * diffuse), 1.);
 
   float d = linearizeDepth(length( vMVPosition.xyz ));
   position = vec4(vMVPosition.xyz, d);
@@ -186,18 +190,41 @@ void main() {
 
   acCol /= 16.;
 
-  vec4 color = texture(colorMap, vUv);
-  // color.rgb = screen(color.rgb, acCol.rgb, .1);
-	// // color.rgb = clamp(color.rgb, vec3(0.), vec3(1.));
-	// vec3 hsl = rgb2hsv(color.rgb);
-	// hsl.z *= 1.-1.5*occlusion;//* (1.-hsl.z);
-  // hsl.z = clamp(hsl.z, 0., 1.);
-	// // vec3 finalColor = czm_saturation(hsv2rgb(hsl), 1.5 + occlusion);
-  // vec3 finalColor = hsv2rgb(hsl);
+  fragColor = vec4(acCol.rgb, occlusion);
+}`;
 
-	// fragColor = vec4(finalColor.rgb, 1. );
+const combineFs = `precision highp float;
 
-  fragColor = color;// vec4(color, 1.);
+in vec2 vUv;
+
+uniform sampler2D colorMap;
+uniform sampler2D ssaoMap;
+uniform vec3 bkgColor;
+
+out vec4 color;
+
+${hsl}
+${screen}
+
+vec3 czm_saturation(vec3 rgb, float adjustment) {
+  // Algorithm from Chapter 16 of OpenGL Shading Language
+  const vec3 W = vec3(0.2125, 0.7154, 0.0721);
+  vec3 intensity = vec3(dot(rgb, W));
+  return mix(intensity, rgb, adjustment);
+}
+
+void main() {
+  vec4 c = texture(colorMap, vUv);
+  vec4 s = texture(ssaoMap, vUv);
+  float occlusion = s.a;
+
+  c.rgb = screen(c.rgb, s.rgb, .1);
+	vec3 hsl = rgb2hsv(c.rgb);
+	hsl.z *= 1.-1.5*occlusion;//* (1.-hsl.z);
+  hsl.z = clamp(hsl.z, 0., 1.);
+  vec3 finalColor = hsv2rgb(hsl);
+
+	color = vec4(finalColor.rgb, 1. );
 }`;
 
 class SSAO {
@@ -217,6 +244,7 @@ class SSAO {
         velocityTexture: { value: null },
         gradientTexture: { value: null },
         types: { value: 0 },
+        bkgColor: { value: new Color() },
       },
       vertexShader,
       fragmentShader,
@@ -255,7 +283,19 @@ class SSAO {
       fragmentShader: ssaoFs,
       glslVersion: GLSL3,
     });
-    this.pass = new ShaderPass(this.ssaoShader, {});
+    this.ssaoPass = new ShaderPass(this.ssaoShader, {});
+
+    this.combineShader = new RawShaderMaterial({
+      uniforms: {
+        colorMap: { value: this.color },
+        ssaoMap: { value: this.ssaoPass.texture },
+        bkgColor: { value: new Color() },
+      },
+      vertexShader: orthoVs,
+      fragmentShader: combineFs,
+      glslVersion: GLSL3,
+    });
+    this.combinePass = new ShaderPass(this.combineShader, {});
   }
 
   setSize(width, height, dpr) {
@@ -268,11 +308,12 @@ class SSAO {
     this.camera.top = h / 2;
     this.camera.bottom = -h / 2;
     this.camera.updateProjectionMatrix();
-    this.pass.setSize(w, h);
+    this.ssaoPass.setSize(w / 4, h / 4);
+    this.combinePass.setSize(w, h);
   }
 
   get output() {
-    return this.pass.texture;
+    return this.ssaoPass.texture;
   }
 
   render(renderer, scene, camera) {
@@ -285,7 +326,8 @@ class SSAO {
     scene.overrideMaterial = null;
     renderer.setRenderTarget(null);
 
-    this.pass.render(renderer, true);
+    this.ssaoPass.render(renderer);
+    this.combinePass.render(renderer, true);
   }
 }
 

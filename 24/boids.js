@@ -185,6 +185,7 @@ const material = new RawShaderMaterial({
     positionTexture: { value: null },
     velocityTexture: { value: null },
     gradientTexture: { value: gradientTex },
+    bkgColor: { value: new Color() },
     types: { value: types },
   },
   vertexShader: particleVs,
@@ -192,8 +193,8 @@ const material = new RawShaderMaterial({
   glslVersion: GLSL3,
 });
 
-// const geometry = new RoundedBoxGeometry(0.005, 0.005, 0.01, 0.0005, 1); // BoxGeometry(0.01, 0.01, 0.02); // IcosahedronGeometry(0.005, 3);
-const geometry = new RoundedBoxGeometry(0.01, 0.01, 0.01, 0.0005, 1);
+const geometry = new RoundedBoxGeometry(0.005, 0.005, 0.01, 0.0005, 1); // BoxGeometry(0.01, 0.01, 0.02); // IcosahedronGeometry(0.005, 3);
+// const geometry = new RoundedBoxGeometry(0.01, 0.01, 0.01, 0.0005, 1);
 
 const WIDTH = 200;
 const HEIGHT = 200;
@@ -493,6 +494,7 @@ function step(renderer, reset = false) {
 function randomize() {
   const { bkg, gradientTex } = randomizePalette();
   material.uniforms.gradientTexture.value = gradientTex;
+  material.uniforms.bkgColor.value.copy(bkg);
   renderer.setClearColor(bkg, 1);
 }
 
