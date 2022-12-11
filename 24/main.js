@@ -22,6 +22,11 @@ import {
   BoxGeometry,
   MeshBasicMaterial,
   PlaneGeometry,
+  PlaneBufferGeometry,
+  MeshNormalMaterial,
+  IcosahedronGeometry,
+  DoubleSide,
+  Raycaster,
 } from "../third_party/three.module.js";
 
 import { SSAO } from "./SSAO.js";
@@ -45,10 +50,25 @@ scene.add(particles);
 const debug = new Mesh(
   new PlaneGeometry(1, 1),
   new MeshBasicMaterial({
-    map: particles.material.uniforms.positionTexture.value,
+    map: particles.material.uniforms.velocityTexture.value,
   })
 );
 // scene.add(debug);
+
+const hitPlane = new Mesh(
+  new PlaneGeometry(100, 100),
+  new MeshBasicMaterial({ side: DoubleSide })
+);
+scene.add(hitPlane);
+// hitPlane.rotation.x = Math.PI / 2;
+hitPlane.visible = false;
+const raycaster = new Raycaster();
+const mouse = new Vector2();
+
+window.addEventListener("mousemove", (e) => {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
 
 const controls = getControls();
 // controls.enableZoom = false;
@@ -67,7 +87,8 @@ stepSim(renderer, true);
 debug.material.map = simShader.uniforms.velocityTexture.value;
 
 function step() {
-  stepSim(renderer);
+  stepSim(renderer, reset);
+  reset = false;
   debug.material.map = simShader.uniforms.velocityTexture.value;
 }
 
@@ -82,6 +103,15 @@ function render() {
     time += dt;
     step();
   }
+
+  hitPlane.lookAt(camera.position);
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObject(hitPlane);
+  if (intersects.length) {
+    simShader.uniforms.predator.value.copy(intersects[0].point);
+  }
+
+  // renderer.autoClear = false;
   // renderer.render(scene, camera);
 
   ssao.shader.uniforms.positionTexture.value =
@@ -97,6 +127,7 @@ function render() {
   ssao.combineShader.uniforms.bkgColor.value.copy(
     particles.material.uniforms.bkgColor.value
   );
+  // renderer.render(scene, camera);
   ssao.render(renderer, scene, camera);
   post.render(ssao.output);
 
@@ -112,6 +143,7 @@ function render() {
 }
 
 function randomize() {
+  //reset = true;
   randomizeColors(renderer);
   randomizeValues();
 }
