@@ -156,8 +156,6 @@ void main() {
 
   float kRadius = radius * ( 1.0 - depth );
 
-  vec4 acCol = vec4(0.);
-
   vec2 k[ 4 ];
   k[ 0 ] = vec2(  0.0,  1.0 );
   k[ 1 ] = vec2(  1.0,  0.0 );
@@ -177,20 +175,12 @@ void main() {
     occlusion += sampleBuffer( position, normal, vUv + k2 * kRadius * 0.75 );
     occlusion += sampleBuffer( position, normal, vUv + k1 * kRadius * 0.5 );
     occlusion += sampleBuffer( position, normal, vUv + k2 * kRadius * 0.25 );
-
-    float s = 1.;
-    acCol += texture(colorMap, vUv + s * k1 * kRadius );
-    acCol += texture(colorMap, vUv + s * k2 * kRadius * 0.75 );
-    acCol += texture(colorMap, vUv + s * k1 * kRadius * 0.5 );
-    acCol += texture(colorMap, vUv + s * k2 * kRadius * 0.25 );
   }
 
   occlusion /= 16.0;
   occlusion = clamp( occlusion, 0.0, 1.0 );
 
-  acCol /= 16.;
-
-  fragColor = vec4(acCol.rgb, occlusion);
+  fragColor = vec4(occlusion);
 }`;
 
 const combineFs = `precision highp float;
@@ -218,7 +208,6 @@ void main() {
   vec4 s = texture(ssaoMap, vUv);
   float occlusion = s.a;
 
-  c.rgb = screen(c.rgb, s.rgb, .1);
 	vec3 hsl = rgb2hsv(c.rgb);
 	hsl.z *= 1.-1.5*occlusion;//* (1.-hsl.z);
   hsl.z = clamp(hsl.z, 0., 1.);
@@ -313,7 +302,7 @@ class SSAO {
   }
 
   get output() {
-    return this.ssaoPass.texture;
+    return this.combinePass.texture;
   }
 
   render(renderer, scene, camera) {
@@ -327,7 +316,7 @@ class SSAO {
     renderer.setRenderTarget(null);
 
     this.ssaoPass.render(renderer);
-    this.combinePass.render(renderer, true);
+    this.combinePass.render(renderer);
   }
 }
 

@@ -32,10 +32,12 @@ import {
   particles,
   step as stepSim,
   simShader,
-  randomize as randomizeColor,
+  randomizeColors,
+  randomizeValues,
 } from "./boids.js";
 
 const ssao = new SSAO();
+const post = new Post(renderer);
 
 let reset = true;
 scene.add(particles);
@@ -96,7 +98,7 @@ function render() {
     particles.material.uniforms.bkgColor.value
   );
   ssao.render(renderer, scene, camera);
-  // post.render(ssao.output);
+  post.render(ssao.output);
 
   // capture(renderer.domElement);
 
@@ -110,8 +112,10 @@ function render() {
 }
 
 function randomize() {
-  randomizeColor();
+  randomizeColors(renderer);
+  randomizeValues();
 }
+randomize();
 
 function goFullscreen() {
   if (renderer.domElement.webkitRequestFullscreen) {
@@ -147,11 +151,9 @@ document.querySelector("#fullscreenBtn").addEventListener("click", (e) => {
   goFullscreen();
 });
 
-renderer.setClearColor(0xffffff, 1);
-
 function myResize(w, h, dPR) {
   ssao.setSize(w, h, dPR);
-  // post.setSize(w, h, dPR);
+  post.setSize(w, h, dPR);
 }
 addResize(myResize);
 

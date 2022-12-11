@@ -178,13 +178,11 @@ void main() {
   color = vec4(vColor * diffuse, 1.);
 }`;
 
-const { bkg, gradientTex } = randomizePalette();
-
 const material = new RawShaderMaterial({
   uniforms: {
     positionTexture: { value: null },
     velocityTexture: { value: null },
-    gradientTexture: { value: gradientTex },
+    gradientTexture: { value: null },
     bkgColor: { value: new Color() },
     types: { value: types },
   },
@@ -196,8 +194,8 @@ const material = new RawShaderMaterial({
 const geometry = new RoundedBoxGeometry(0.005, 0.005, 0.01, 0.0005, 1); // BoxGeometry(0.01, 0.01, 0.02); // IcosahedronGeometry(0.005, 3);
 // const geometry = new RoundedBoxGeometry(0.01, 0.01, 0.01, 0.0005, 1);
 
-const WIDTH = 200;
-const HEIGHT = 200;
+const WIDTH = 128;
+const HEIGHT = 128;
 const PARTICLES = WIDTH * HEIGHT;
 
 const particles = new InstancedMesh(geometry, material, PARTICLES);
@@ -301,6 +299,10 @@ uniform float time;
 uniform float delta;
 uniform float turn;
 
+uniform float alignmentRadius;
+uniform float cohesionRadius;
+uniform float separationRadius;
+
 layout(location = 0) out vec4 position;
 layout(location = 1) out vec4 velocity;
 
@@ -372,14 +374,14 @@ void main() {
           if(pos.w == group) {
 
             // Alignment
-            if(dist < .2) {
+            if(dist < alignmentRadius) {
               vec3 vel = texture(velocityTexture, puv).xyz;
               alignment += vel;
               alignmentTotal++;
             }
             
             // Cohesion
-            if(dist < .4) {
+            if(dist < cohesionRadius) {
               center += pos.xyz;
               cohesionTotal++;
             }
@@ -387,7 +389,7 @@ void main() {
           }
             
           // Separation
-          if(dist < .4) {
+          if(dist < separationRadius) {
             separation -= dir;
           }
           
@@ -421,11 +423,12 @@ void main() {
 
     newVel.xyz += acceleration * .1;
     newVel.xyz = normalize(newVel.xyz) * .01;
-    float impulse = .5 + .5 * sin(time + 100. * velocity.w);
+    // newVel.xyz = clamp(newVel.xyz, vec3(-.01), vec3(.01));
+    // float impulse = .5 + .5 * sin(time + 100. * velocity.w);
     // impulse = parabola(impulse, .5);
     // newVel.xyz *= .5 + .5 * impulse;
 
-    velocity.xyz = newVel;
+    velocity.xyz = newVel * .5;
     velocity.xyz *= (1.5-velocity.w);
 
     position.xyz += velocity.xyz;
@@ -458,6 +461,9 @@ const simShader = new RawShaderMaterial({
     seed: { value: 0 },
     delta: { value: 1 },
     time: { value: 0 },
+    alignmentRadius: { value: 0.2 },
+    cohesionRadius: { value: 0.4 },
+    separationRadius: { value: 0.4 },
   },
   vertexShader: simVs,
   fragmentShader: simFs,
@@ -491,11 +497,17 @@ function step(renderer, reset = false) {
   material.uniforms.velocityTexture.value = fbos[currentFBO].texture[1];
 }
 
-function randomize() {
+function randomizeColors(renderer) {
   const { bkg, gradientTex } = randomizePalette();
   material.uniforms.gradientTexture.value = gradientTex;
   material.uniforms.bkgColor.value.copy(bkg);
   renderer.setClearColor(bkg, 1);
 }
 
-export { particles, simShader, step, randomize };
+function randomizeValues() {
+  simShader.uniforms.alignmentRadius.value = randomInRange(0.2, 0.4);
+  simShader.uniforms.cohesionRadius.value = randomInRange(0.4, 0.6);
+  simShader.uniforms.separationRadius.value = randomInRange(0.4, 0.6);
+}
+
+export { particles, simShader, step, randomizeColors, randomizeValues };
