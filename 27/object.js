@@ -185,7 +185,7 @@ vec3 normal(in vec3 pos, in float d0, in vec3 n) {
   float dv = s * (fbm(p2, 10., 0, 4, 0.) - d0);
 
   vec3 np = n + du * cross(pu, n) + dv * cross(pv, n);
-  return normalize(np);
+  return normalize(np + .1 * d0 * random3(pos, pos.y * 123222.1212));
 }
 
 void main() {
