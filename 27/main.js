@@ -6,30 +6,13 @@ import {
   addResize,
   resize,
 } from "../modules/renderer.js";
-import {
-  InstancedMesh,
-  Matrix4,
-  Group,
-  Object3D,
-  Vector3,
-  PCFSoftShadowMap,
-  DirectionalLight,
-  sRGBEncoding,
-  HemisphereLight,
-  DynamicDrawUsage,
-  Vector2,
-  Mesh,
-  BoxGeometry,
-  MeshBasicMaterial,
-  TorusKnotGeometry,
-  IcosahedronGeometry,
-  TorusGeometry,
-} from "../third_party/three.module.js";
+import { Mesh } from "../third_party/three.module.js";
 import { material, randomize as randomizeColors } from "./object.js";
 import {
   loadSuzanne,
   loadIcosahedron,
   generateBlob,
+  loadDodecahedron,
 } from "../modules/models.js";
 
 import { SSAO } from "./SSAO.js";
@@ -46,12 +29,13 @@ const controls = getControls();
 let mesh;
 
 async function init() {
+  // const geometry = await loadDodecahedron();
   // const geometry = await loadIcosahedron();
-  // const geometry = generateBlob();
+  const geometry = generateBlob();
   // const geometry = await loadSuzanne();
   // const geometry = new IcosahedronGeometry(1, 10);
   // const geometry = new TorusKnotGeometry(1, 0.3, 200, 40);
-  const geometry = new TorusGeometry(1, 0.4, 200, 40);
+  // const geometry = new TorusGeometry(1, 0.4, 200, 40);
   mesh = new Mesh(geometry, material);
   scene.add(mesh);
 
