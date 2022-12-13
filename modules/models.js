@@ -61,7 +61,7 @@ function generateBlob() {
   const geometry = weld(toIndexed(new IcosahedronGeometry(1, 30)));
   const vertices = geometry.attributes.position.array;
   const v = new Vector3();
-  const scale = 0.05;
+  const scale = 0.1;
   const noise = 1;
   for (let i = 0; i < vertices.length; i += 3) {
     v.set(vertices[i], vertices[i + 1], vertices[i + 2]);
@@ -78,4 +78,10 @@ function generateBlob() {
   return geometry;
 }
 
-export { loadSuzanne, loadIcosahedron, loadBox, generateBlob };
+export {
+  loadSuzanne,
+  loadIcosahedron,
+  loadDodecahedron,
+  loadBox,
+  generateBlob,
+};
