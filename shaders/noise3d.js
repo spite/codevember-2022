@@ -11,8 +11,7 @@ const shader = `
 //               https://github.com/stegu/webgl-noise
 // 
 
-float noise3d(vec3 v)
-  { 
+float noise3d(vec3 v) { 
   const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
