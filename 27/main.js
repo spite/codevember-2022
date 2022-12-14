@@ -41,6 +41,7 @@ async function init() {
     loadBox(),
     loadDodecahedron(),
     loadIcosahedron(),
+    loadBox(),
     generateBlob(),
     loadSuzanne(),
     new IcosahedronGeometry(0.75, 10),
