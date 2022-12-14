@@ -16,44 +16,44 @@ import { GradientLinear } from "../modules/gradient-linear.js";
 import { randomInRange } from "../modules/Maf.js";
 import { shader as hsl } from "../shaders/hsl.js";
 
-const sand1 = [
-  "#b8987a",
-  "#caa87f",
-  "#dfb98a",
-  "#ebc99c",
-  "#f3ddb0",
-  "#f9e6c1",
-  "#fff3d7",
+const palettes = [
+  ["#f2ead6", "#327172", "#2d3e58", "#f47e72", "#f2cab1"],
+  ["#bd1603", "#3aa4ac", "#fabf55", "#b80b01", "#a70a01"],
+  ["#369d9b", "#50a69d", "#f08a19", "#b00a01", "#fcbe8a"],
+  ["#720b04", "#480d07", "#d3e6dd", "#fdad6c", "#51a79d"],
+  ["#480d07", "#d2470c", "#f6f6e9", "#49aab0", "#fac25c"],
+  ["#a4c3a1", "#d44c0d", "#8ac7c6", "#f9d07f", "#480d07"],
+  ["#fe8930", "#480d07", "#b4d9d3", "#480d07", "#379e9b"],
+  ["#028b99", "#f8da95", "#720b04", "#480d07", "#d44c0d"],
+  ["#480d07", "#c5e0d9", "#cb3609", "#730b04", "#fe8326"],
+  ["#67ae9e", "#d2e6dd", "#d8550f", "#480d07", "#a8d4d0"],
+  ["#ee7f1c", "#d01a05", "#e7540f", "#660701", "#e81e05"],
+  ["#6c0802", "#380000", "#f7f1ac", "#9d1003", "#390000"],
+  ["#f62f64", "#f97698", "#b98baf", "#a43c62", "#9877a8"],
+  ["#fddde5", "#c2364d", "#fa98b2", "#be8fb1", "#e5a8ba"],
+  ["#0654c5", "#f8810b", "#1a2c73", "#d03702", "#d03401"],
+  ["#0b3481", "#f36003", "#0d75d5", "#e8b396", "#0b2a77"],
+  ["#a6a387", "#739998", "#bb530b", "#3e4a48", "#cd1409"],
+  ["#dc6a1c", "#6e9695", "#b1b4a4", "#93afad", "#9f9772"],
+  ["#3c1711", "#63160f", "#733833", "#492a11", "#9f9772"],
+  ["#206262", "#bb530b", "#9f9772", "#195d5d", "#a8261d"],
+  ["#295151", "#a12820", "#444845", "#414947", "#511610"],
+  ["#356f70", "#81332d", "#9e2921", "#583010", "#d9deda"],
+  ["#ab4d0c", "#2b6969", "#db6c1e", "#603210", "#326e6e"],
+  ["#512d11", "#b1b4a4", "#81150d", "#b7bdb3", "#bcb09b"],
+  ["#8e70a5", "#824379", "#feebb9", "#f54026", "#836aa3"],
+  ["#ecacbc", "#7863a0", "#ecacbc", "#9a78a8", "#f43729"],
+  ["#ecacbc", "#f76919", "#9172a6", "#f986a5", "#ecacbc"],
+  ["#c493b2", "#ecacbc", "#fcab03", "#f87296", "#fa99b3"],
+  ["#bc8eb0", "#923f6d", "#5a4a93", "#f64e21", "#ecacbc"],
 ];
-
-const sand2 = ["#f2ead6", "#327172", "#2d3e58", "#f47e72", "#f2cab1"];
-const sand3 = ["#f1e2c3", "#8595a4", "#8d4f2a", "#d86b28", "#eca956"];
-const sand4 = [
-  "#242112",
-  "#684f27",
-  "#9a733a",
-  "#ac8f56",
-  "#e5a752",
-  "#fdbe6e",
-  "#ffd28f",
-];
-const sand5 = [
-  "#44200a",
-  "#75380c",
-  "#9e5922",
-  "#b96525",
-  "#da863d",
-  "#f5ad63",
-  "#fec37d",
-];
-const palettes = [sand1, sand2, sand3, sand4, sand5];
 
 function randomizePalette() {
   const palette = palettes[Math.floor(Math.random() * palettes.length)];
   const gradient = new GradientLinear(palette);
 
   let colors = [];
-  const steps = Math.round(randomInRange(3, 6));
+  const steps = Math.round(randomInRange(3, 12));
   for (let i = 0; i < steps; i++) {
     const c = gradient.getAt(Math.random());
     colors.push(c);
@@ -128,6 +128,10 @@ uniform sampler2D matcapTexture;
 uniform float seed;
 uniform float scale;
 uniform float time;
+uniform float epsilon;
+uniform float bumpScale;
+uniform vec3 bkgColor;
+uniform float roughness;
 
 out vec4 color;
 
@@ -164,15 +168,14 @@ vec3 random3(vec3 p, in float seed) {
 }
 
 vec3 convert(in vec3 p) {
-  p += vec3(time);
-  return p + perlinfbm(p * vec3(.5, .25, .5) + seed, scale * 1., 4);
+  return p + perlinfbm(p * vec3(.5, .25, .5) + seed + time, scale * 1., 4);
 }
 
 // https://www.ics.uci.edu/~majumder/VC/classes/BEmap.pdf
 
 vec3 normal(in vec3 pos, in float d0, in vec3 n) {
-  float e = .01;
-  float s = .2;
+  float e = epsilon;
+  float s = bumpScale;
 
   vec3 pu = cross(n, vec3(0.,1.,0.));
   vec3 p1 = pos + pu * e;
@@ -185,12 +188,11 @@ vec3 normal(in vec3 pos, in float d0, in vec3 n) {
   float dv = s * (fbm(p2, 10., 0, 4, 0.) - d0);
 
   vec3 np = n + du * cross(pu, n) + dv * cross(pv, n);
-  return normalize(np + .1 * d0 * random3(pos, pos.y * 123222.1212));
+  return normalize(np + roughness * d0 * random3(pos, pos.y * 123222.1212));
 }
 
 void main() {
 
-  // vec3 n = normalize(vNormal);
   vec3 eye = normalize(mvPosition.xyz);
 
   vec3 p = convert(vPosition);
@@ -217,14 +219,13 @@ void main() {
   color = vec4(hue * diffuse, 1.);
 
   vec3 r = reflect(eye, n);
-  float m = 2.8284271247461903 * sqrt(r.z+1.);//2. * sqrt( pow( 1., 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+  float m = sqrt(8.) * sqrt(r.z+1.);//2. * sqrt( pow( 1., 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
   vec2 vN = r.xy / m + .5;
   vec4 mat = texture(matcapTexture, vN);
 
   color.rgb = clamp(color.rgb, vec3(0.), vec3(1.));
-  color.rgb = mix(color.rgb, vec3(0.), pow(rim, 4.));
+  color.rgb = mix(color.rgb, bkgColor , pow(rim, 4.));
   color.rgb = screen(color.rgb, mat.rgb, 1.);
-  // color.rgb = vec3(c2-c);
 }
 `;
 
@@ -235,9 +236,13 @@ const material = new RawShaderMaterial({
   uniforms: {
     gradient: { value: null },
     matcapTexture: { value: matcapTexture },
+    epsilon: { value: 0.001 },
+    bkgColor: { value: new Color() },
+    bumpScale: { value: 0.2 },
     scale: { value: 1 },
     time: { value: 0 },
     seed: { value: null },
+    roughness: { value: 0 },
   },
   vertexShader,
   fragmentShader,
@@ -245,12 +250,16 @@ const material = new RawShaderMaterial({
   side: DoubleSide,
 });
 
-function randomize() {
+function randomize(renderer) {
   material.uniforms.scale.value = randomInRange(0.75, 1.5);
-  material.uniforms.gradient.value = randomizePalette().gradientTex;
+  const { bkg, gradientTex } = randomizePalette();
+  renderer.setClearColor(bkg, 1);
+  material.uniforms.bkgColor.value.copy(bkg);
+  material.uniforms.gradient.value = gradientTex;
   material.uniforms.seed.value = randomInRange(-1000, 1000);
+  material.uniforms.epsilon.value = randomInRange(0.001, 0.01);
+  material.uniforms.epsilon.bumpScale = randomInRange(0.1, 0.2);
+  material.uniforms.roughness.value = randomInRange(0, 0.15);
 }
-
-randomize();
 
 export { material, randomize };
