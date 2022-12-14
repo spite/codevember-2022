@@ -38,7 +38,6 @@ let geometries;
 async function init() {
   randomizeColors(renderer);
   geometries = await Promise.all([
-    loadBox(),
     loadDodecahedron(),
     loadIcosahedron(),
     loadBox(),

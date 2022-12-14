@@ -11,7 +11,7 @@ import {
 } from "../third_party/three.module.js";
 import { shader as noiseCommon } from "../shaders/noise-common.js";
 import { shader as screen } from "../shaders/screen.js";
-import { shader as worley } from "../shaders/worley.js";
+import { shader as noise3d } from "../shaders/noise3d.js";
 import { GradientLinear } from "../modules/gradient-linear.js";
 import { randomInRange } from "../modules/Maf.js";
 import { shader as hsl } from "../shaders/hsl.js";
@@ -136,9 +136,9 @@ uniform float roughness;
 out vec4 color;
 
 ${noiseCommon}
-${worley}
 ${hsl}
 ${screen}
+${noise3d}
 
 float fbm(vec3 p, float freq, int start, int end, float noise) {
   float G = exp2(-.85);
@@ -148,7 +148,7 @@ float fbm(vec3 p, float freq, int start, int end, float noise) {
     amp *= G;
   }
   for (int i = start; i < end; ++i) {
-    noise += amp * gradientNoise(p * freq * vec3(.1, 2., .1), freq);
+    noise += amp * noise3d(p * freq * vec3(.1, 2., .1));//, freq);
     freq *= 2.;
     amp *= G;
   }
@@ -168,7 +168,8 @@ vec3 random3(vec3 p, in float seed) {
 }
 
 vec3 convert(in vec3 p) {
-  return p + perlinfbm(p * vec3(.5, .25, .5) + seed + time, scale * 1., 4);
+  // return p + perlinfbm(p * vec3(.5, .25, .5) + seed + time, scale * 1., 4);
+  return p + noise3d(p * vec3(.5, .25, .5) * scale + seed + time);
 }
 
 // https://www.ics.uci.edu/~majumder/VC/classes/BEmap.pdf
@@ -180,12 +181,12 @@ vec3 normal(in vec3 pos, in float d0, in vec3 n) {
   vec3 pu = cross(n, vec3(0.,1.,0.));
   vec3 p1 = pos + pu * e;
   p1 = convert(p1);
-  float du = s * (fbm(p1, 10., 0, 4, 0.) - d0);
+  float du = s * (fbm(p1, 1., 0, 4, 0.) - d0);
   
   vec3 pv = cross(n, p1);
   vec3 p2 = pos + pv * e; 
   p2 = convert(p2);
-  float dv = s * (fbm(p2, 10., 0, 4, 0.) - d0);
+  float dv = s * (fbm(p2, 1., 0, 4, 0.) - d0);
 
   vec3 np = n + du * cross(pu, n) + dv * cross(pv, n);
   return normalize(np + roughness * d0 * random3(pos, pos.y * 123222.1212));
@@ -197,9 +198,9 @@ void main() {
 
   vec3 p = convert(vPosition);
 
-  float c = fbm(p, scale * 10., 0, 2, 0.);
-  float c2 = fbm(p, scale * 10., 2, 4, c);
-  float c3 = fbm(p, scale * 10., 4, 8, c2);
+  float c = fbm(p, scale * 1., 0, 2, 0.);
+  float c2 = fbm(p, scale * 1., 2, 4, c);
+  float c3 = fbm(p, scale * 1., 4, 8, c2);
 
   vec3 n = normal(vPosition, c3, normalize(vNormal));
 
@@ -258,7 +259,7 @@ function randomize(renderer) {
   material.uniforms.gradient.value = gradientTex;
   material.uniforms.seed.value = randomInRange(-1000, 1000);
   material.uniforms.epsilon.value = randomInRange(0.001, 0.01);
-  material.uniforms.epsilon.bumpScale = randomInRange(0.1, 0.2);
+  material.uniforms.epsilon.bumpScale = randomInRange(0.1, 1);
   material.uniforms.roughness.value = randomInRange(0, 0.15);
 }
 
