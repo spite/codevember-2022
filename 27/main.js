@@ -93,13 +93,17 @@ function goFullscreen() {
   }
 }
 
-function randomize() {
+function randomizeGeometry() {
   let geo;
   do {
     geo = Math.floor(Math.random() * geometries.length);
   } while (geo === currentGeometry);
   mesh.geometry = geometries[geo];
   currentGeometry = geo;
+}
+
+function randomize() {
+  randomizeGeometry();
   randomizeColors(renderer);
 }
 
@@ -110,7 +114,7 @@ window.addEventListener("keydown", (e) => {
     randomize();
   }
   if (e.code === "KeyS") {
-    mesh.geometry = geometries[Math.floor(Math.random() * geometries.length)];
+    randomizeGeometry();
   }
   if (e.code === "KeyM") {
     randomizeColors(renderer);
@@ -124,7 +128,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 document.querySelector("#randomizeShapeBtn").addEventListener("click", (e) => {
-  mesh.geometry = geometries[Math.floor(Math.random() * geometries.length)];
+  randomizeGeometry();
 });
 
 document
