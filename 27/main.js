@@ -34,6 +34,7 @@ const controls = getControls();
 
 let mesh;
 let geometries;
+let currentGeometry = null;
 
 async function init() {
   randomizeColors(renderer);
@@ -47,7 +48,8 @@ async function init() {
     new TorusKnotGeometry(0.5, 0.15, 200, 40),
     new TorusGeometry(0.5, 0.2, 200, 40),
   ]);
-  mesh = new Mesh(geometries[0], material);
+  currentGeometry = geometries[0];
+  mesh = new Mesh(currentGeometry, material);
   mesh.rotation.set(0.1, 0.0, 0.2);
   scene.add(mesh);
 
@@ -92,7 +94,12 @@ function goFullscreen() {
 }
 
 function randomize() {
-  mesh.geometry = geometries[Math.floor(Math.random() * geometries.length)];
+  let geo;
+  do {
+    geo = Math.floor(Math.random() * geometries.length);
+  } while (geo === currentGeometry);
+  mesh.geometry = geometries[geo];
+  currentGeometry = geo;
   randomizeColors(renderer);
 }
 

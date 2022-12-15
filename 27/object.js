@@ -132,6 +132,8 @@ uniform float epsilon;
 uniform float bumpScale;
 uniform vec3 bkgColor;
 uniform float roughness;
+uniform float scaleMin;
+uniform float scaleMax;
 
 out vec4 color;
 
@@ -148,7 +150,7 @@ float fbm(vec3 p, float freq, int start, int end, float noise) {
     amp *= G;
   }
   for (int i = start; i < end; ++i) {
-    noise += amp * noise3d(p * freq * vec3(.1, 2., .1));//, freq);
+    noise += amp * noise3d(p * freq * vec3(scaleMin, scaleMax, scaleMin));//, freq);
     freq *= 2.;
     amp *= G;
   }
@@ -244,6 +246,8 @@ const material = new RawShaderMaterial({
     time: { value: 0 },
     seed: { value: null },
     roughness: { value: 0 },
+    scaleMin: { value: 0.1 },
+    scaleMax: { value: 2 },
   },
   vertexShader,
   fragmentShader,
@@ -252,7 +256,7 @@ const material = new RawShaderMaterial({
 });
 
 function randomize(renderer) {
-  material.uniforms.scale.value = randomInRange(0.75, 1.5);
+  material.uniforms.scale.value = randomInRange(0.75, 2);
   const { bkg, gradientTex } = randomizePalette();
   renderer.setClearColor(bkg, 1);
   material.uniforms.bkgColor.value.copy(bkg);
@@ -261,6 +265,8 @@ function randomize(renderer) {
   material.uniforms.epsilon.value = randomInRange(0.001, 0.01);
   material.uniforms.epsilon.bumpScale = randomInRange(0.1, 1);
   material.uniforms.roughness.value = randomInRange(0, 0.15);
+  material.uniforms.scaleMin.value = randomInRange(0.01, 0.05);
+  material.uniforms.scaleMax.value = randomInRange(1, 3);
 }
 
 export { material, randomize };
