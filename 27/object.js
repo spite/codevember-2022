@@ -262,8 +262,8 @@ function randomize(renderer) {
   material.uniforms.bkgColor.value.copy(bkg);
   material.uniforms.gradient.value = gradientTex;
   material.uniforms.seed.value = randomInRange(-1000, 1000);
-  material.uniforms.epsilon.value = randomInRange(0.01, 0.1);
-  material.uniforms.bumpScale.value = randomInRange(0.1, 0.2);
+  material.uniforms.epsilon.value = randomInRange(0.01, 0.05);
+  material.uniforms.bumpScale.value = randomInRange(0.01, 0.3);
   material.uniforms.roughness.value = randomInRange(0, 0.15);
   material.uniforms.scaleMin.value = randomInRange(0.01, 0.05);
   material.uniforms.scaleMax.value = randomInRange(1, 3);
